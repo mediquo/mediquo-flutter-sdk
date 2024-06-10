@@ -16,7 +16,7 @@ The MediQuo Flutter SDK can be added in your project following the next steps:
   mediquo_flutter_sdk:
     git:
       url: https://github.com/mediquo/mediquo-flutter-sdk.git
-      ref: 0.0.1
+      ref: x.y.z
 ```
 
 Then, download the package by running the `flutter pub get` command.
