@@ -5,7 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+enum MediquoWidgetEnvironment {
+  production,
+  sandbox
+}
+
 class MediquoWidget extends StatefulWidget {
+  final MediquoWidgetEnvironment environment;
   final String apiKey;
   final String token;
   final Function(String) onDownload;
@@ -14,11 +20,12 @@ class MediquoWidget extends StatefulWidget {
 
   const MediquoWidget({
     Key? key,
+    this.environment = MediquoWidgetEnvironment.production,
     required this.apiKey,
     required this.token,
     required this.onDownload,
     required this.onMicrophonePermission,
-    required this.onCameraPermission
+    required this.onCameraPermission,
   }) : super(key: key);
 
   @override
@@ -30,14 +37,15 @@ class _MediquoWidgetState extends State<MediquoWidget> {
 
   String url = '';
   String title = '';
-  // double progress = 0;
   bool? isSecure;
   InAppWebViewController? webViewController;
 
   @override
   void initState() {
     super.initState();
-    url = 'https://deploy-preview-197--mediquo-widget.netlify.app/integration/index.html?apiKey=${widget.apiKey}?token=${widget.token}';
+    url = widget.environment == MediquoWidgetEnvironment.production
+        ? 'https://widget.mediquo.com/integration/index.html?api_key=${widget.apiKey}&token=${widget.token}'
+        : 'https://widget.dev.mediquo.com/integration/index.html?api_key=${widget.apiKey}&token=${widget.token}';
   }
 
   @override
@@ -58,7 +66,7 @@ class _MediquoWidgetState extends State<MediquoWidget> {
               children: [
                 InAppWebView(
                   key: webViewKey,
-                  initialUrlRequest: URLRequest(url: WebUri('https://deploy-preview-197--mediquo-widget.netlify.app/integration/index.html?api_key=ePa2hnje9RqnEq97&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vY2hhdC1kZXYubWVkaXF1by5jb20vc2RrL3YxL3BhdGllbnRzL2F1dGhlbnRpY2F0ZSIsImlhdCI6MTY5OTYwOTAzNiwibmJmIjoxNjk5NjA5MDM2LCJqdGkiOiJCUWhwWmVQYm5kOTRmOGtkIiwic3ViIjoiNWQ3MjUzODEtMWM3Zi00MTI5LWE1MmMtNjdkNTE2NzNmYzVlIiwicHJ2IjoiOWVhNDBmMDk5MzU4OWE3OGQ1MmFjZThjNTNjMzA1OTM1MjBlZDQyNyJ9.tUP1YzbJQC6hbbEchKffLw_y8FZPUJSOhUK__8ZE5X0')),
+                  initialUrlRequest: URLRequest(url: WebUri(url)),
                   initialSettings: InAppWebViewSettings(
                       transparentBackground: true,
                       safeBrowsingEnabled: true,
