@@ -1,9 +1,8 @@
-library mediquo_flutter_package;
+library mediquo_flutter_sdk;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 enum MediquoWidgetEnvironment {
   production,
@@ -43,22 +42,14 @@ class _MediquoWidgetState extends State<MediquoWidget> {
   @override
   void initState() {
     super.initState();
-    url = widget.environment == MediquoWidgetEnvironment.production
-        ? 'https://widget.mediquo.com/integration/index.html?api_key=${widget.apiKey}&token=${widget.token}'
-        : 'https://widget.dev.mediquo.com/integration/index.html?api_key=${widget.apiKey}&token=${widget.token}';
+    url = 'https://widget.mediquo.com/integration/index.html?api_key=${widget.apiKey}&token=${widget.token}&environment=${widget.environment.name}';
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Chat de MediQuo')
-        /*leading: IconButton(
-          icon: const Icon(Icons.close),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),*/
+        title: const Text('')
       ),
       body: Column(children: <Widget>[
         Expanded(
@@ -77,20 +68,6 @@ class _MediquoWidgetState extends State<MediquoWidget> {
                       iframeAllowFullscreen: true,
                       useOnDownloadStart: true
                   ),
-                  /*onReceivedHttpError: (controller, request, errorResponse) async {
-                    // Handle HTTP errors here
-                    var isForMainFrame = request.isForMainFrame ?? false;
-                    if (!isForMainFrame) {
-                      return;
-                    }
-                  },*/
-                  /*onWebViewCreated: (controller) async {
-                    webViewController = controller;
-                    if (!kIsWeb &&
-                        defaultTargetPlatform == TargetPlatform.android) {
-                      await controller.startSafeBrowsing();
-                    }
-                  },*/
                   onLoadStart: (controller, url) {
                     if (url != null) {
                       setState(() {
@@ -123,30 +100,7 @@ class _MediquoWidgetState extends State<MediquoWidget> {
                         action: PermissionResponseAction.GRANT
                     );
                   },
-                  shouldOverrideUrlLoading: (controller, navigationAction) async {
-                    final url = navigationAction.request.url;
-                    if (navigationAction.isForMainFrame &&
-                        url != null &&
-                        ![
-                          'http',
-                          'https',
-                          'file',
-                          'chrome',
-                          'data',
-                          'javascript',
-                          'about'
-                        ].contains(url.scheme)) {
-                      if (await canLaunchUrl(url)) {
-                        launchUrl(url);
-                        return NavigationActionPolicy.CANCEL;
-                      }
-                    }
-                    return NavigationActionPolicy.ALLOW;
-                  },
                 ),
-                /* progress < 1.0
-                    ? LinearProgressIndicator(value: progress)
-                    : Container(),*/
               ],
             )),
       ]),

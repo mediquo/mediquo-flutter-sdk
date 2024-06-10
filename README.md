@@ -1,39 +1,57 @@
-<!--
-This README describes the package. If you publish this package to pub.dev,
-this README's contents appear on the landing page for your package.
+# MediQuo Flutter SDK
 
-For information about how to write a good package README, see the guide for
-[writing package pages](https://dart.dev/guides/libraries/writing-package-pages).
+The MediQuo Flutter SDK allows to integrate the MediQuo web widget in your Flutter application. The main features are:
+- Chat
+- Video call
 
-For general information about developing packages, see the Dart guide for
-[creating packages](https://dart.dev/guides/libraries/create-library-packages)
-and the Flutter guide for
-[developing packages and plugins](https://flutter.dev/developing-packages).
--->
+The package uses the [InAppWebView v6](https://inappwebview.dev/) plugin in order to load and interact with a MediQuo web widget. 
 
-TODO: Put a short description of the package here that helps potential users
-know whether this package might be useful for them.
+## Installation
 
-## Features
+The MediQuo Flutter SDK can be added in your project following the next steps:
 
-TODO: List what your package can do. Maybe include images, gifs, or videos.
+- Add the Github package `https://github.com/mediquo/mediquo-flutter-sdk.git` the `pubspec.yaml` file in your Flutter project. Specify the version by the tag in the reference.
 
-## Getting started
-
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
-
-## Usage
-
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder.
-
-```dart
-const like = 'sample';
+```yaml
+  mediquo_flutter_sdk:
+    git:
+      url: https://github.com/mediquo/mediquo-flutter-sdk.git
+      ref: 0.0.1
 ```
 
-## Additional information
+Then, download the package by running the `flutter pub get` command.
 
-TODO: Tell users more about the package: where to find more information, how to
-contribute to the package, how to file issues, what response they can expect
-from the package authors, and more.
+## Integration
+
+In order to integrate the SDK, import the package in your dart class.
+
+```dart
+import 'package:mediquo_flutter_sdk/mediquo_flutter_sdk.dart';
+```
+
+Before you initialize the SDK, make sure you have at hand these two values:
+- `API_KEY`: Your personal api key provided by MediQuo.
+- `TOKEN`: Patient token obtained from the [patients authenticate method](https://developer.mediquo.com/docs/api/patients/#authenticate)
+
+Whenever you want to present the MediQuo functionality, add the lines below:
+
+```dart
+MediquoWidget(
+    apiKey: API_KEY,
+    token: TOKEN,
+    onDownload: onDownloadListener,
+    onMicrophonePermission: onMicrophonePermission,
+    onCameraPermission: onCameraPermission
+);
+``` 
+
+### Listeners
+
+In order to have a full functionality of the widget, the init method requires the definition of some listener functions. These functions should define the behaviour of your application in the next cases:
+- onDownload(string downloadUrl): It will be instantiated when the user tries to download a file in the SDK. 
+- onMicrophonePermission(): It will be instantiated when the user is accessing to a video call and requires the microphone device permission.
+- onCameraPermission(): It will be instantiated when the user is accessing to a video call and requires the camera device permission.
+
+## Example
+
+The next class opens a new page when the floating button is 
