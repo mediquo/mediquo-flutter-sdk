@@ -10,7 +10,7 @@ The package uses the [InAppWebView v6](https://inappwebview.dev/) plugin in orde
 
 The MediQuo Flutter SDK can be added in your project following the next steps:
 
-- Add the Github package `https://github.com/mediquo/mediquo-flutter-sdk.git` the `pubspec.yaml` file in your Flutter project. Specify the version by the tag in the reference.
+- Add the Github package `https://github.com/mediquo/mediquo-flutter-sdk.git` the `pubspec.yaml` file in your Flutter project. Specify the version by the tag in the [reference](https://github.com/mediquo/mediquo-flutter-sdk/tags).
 
 ```yaml
   mediquo_flutter_sdk:
@@ -23,15 +23,15 @@ Then, download the package by running the `flutter pub get` command.
 
 ## Integration
 
+Before you initialize the SDK, make sure you have at hand these two values:
+- `API_KEY`: Your personal api key provided by MediQuo.
+- `TOKEN`: Patient token obtained from the [patients authenticate method](https://developer.mediquo.com/docs/api/patients/#authenticate)
+
 In order to integrate the SDK, import the package in your dart class.
 
 ```dart
 import 'package:mediquo_flutter_sdk/mediquo_flutter_sdk.dart';
 ```
-
-Before you initialize the SDK, make sure you have at hand these two values:
-- `API_KEY`: Your personal api key provided by MediQuo.
-- `TOKEN`: Patient token obtained from the [patients authenticate method](https://developer.mediquo.com/docs/api/patients/#authenticate)
 
 Whenever you want to present the MediQuo functionality, add the lines below:
 
