@@ -48,10 +48,119 @@ MediquoWidget(
 ### Listeners
 
 In order to have a full functionality of the widget, the init method requires the definition of some listener functions. These functions should define the behaviour of your application in the next cases:
-- onDownload(string downloadUrl): It will be instantiated when the user tries to download a file in the SDK. 
-- onMicrophonePermission(): It will be instantiated when the user is accessing to a video call and requires the microphone device permission.
-- onCameraPermission(): It will be instantiated when the user is accessing to a video call and requires the camera device permission.
+- onDownload(string downloadUrl): It will be invoked when the user tries to download a file in the SDK. 
+- onMicrophonePermission(): It will be invoked when the user is accessing to a video call and requires the device microphone permission.
+- onCameraPermission(): It will be invoked when the user is accessing to a video call and requires the device camera permission.
 
 ## Example
 
-The next class opens a new page when the floating button is 
+The next class opens a new page when the floating button is pressed.
+
+```dart
+import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_downloader/flutter_downloader.dart';
+import 'package:mediquo_flutter_sdk/mediquo_flutter_sdk.dart';
+
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+
+Future main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await FlutterDownloader.initialize(
+      debug: true,
+      ignoreSsl: true
+  );
+
+  runApp(const MaterialApp(home: MyApp()));
+}
+
+class MyApp extends StatefulWidget {
+  const MyApp({Key? key}) : super(key: key);
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+
+  static onDownloadListener(String downloadUrl) async {
+    final tempDir = Platform.isAndroid
+        ? await getExternalStorageDirectory()
+        : await getApplicationDocumentsDirectory();
+
+    await FlutterDownloader.enqueue(
+        url: downloadUrl,
+        savedDir: tempDir!.path,
+        showNotification: true,
+        openFileFromNotification: true,
+        saveInPublicStorage: true
+    );
+
+    return;
+  }
+
+  static onMicrophonePermission() async {
+    await Permission.microphone.request();
+  }
+
+  static onCameraPermission() async {
+    await Permission.camera.request();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: AppBar(
+          title: const Text("My app"),
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            Navigator.push(context, MaterialPageRoute(
+              builder: (context) {
+                return const MediquoWidget(
+                    apiKey: '',
+                    token: '',
+                    onDownload: onDownloadListener,
+                    onMicrophonePermission: onMicrophonePermission,
+                    onCameraPermission: onCameraPermission,
+                );
+              },
+              )
+            );
+          },
+          child: const Icon(Icons.local_hospital)
+        ),
+    );
+  }
+}
+```
+
+Notice the next points in the code:
+- Api key and token are empty values. 
+- Camera and microphone permission listeners are implemented using the [Flutter permission_handler plugin](https://pub.dev/packages/permission_handler).
+- Download listener is implemented using the [Flutter downloader plugin](https://pub.dev/packages/flutter_downloader)
+
+In order to grant permissions, the `AndroidManifest.xml` was modified by adding these lines:
+
+```xml
+<uses-permission android:name="android.permission.INTERNET"/>
+<uses-permission android:name="android.permission.CAMERA" />
+<uses-permission android:name="android.permission.RECORD_AUDIO" />
+<uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+<uses-permission android:name="android.permission.VIDEO_CAPTURE" />
+<uses-permission android:name="android.permission.AUDIO_CAPTURE" />
+```
+
+Also the `Info.plist` file:
+```
+<key>NSMicrophoneUsageDescription</key>
+<string>Flutter requires access to microphone.</string>
+
+<key>NSCameraUsageDescription</key>
+<string>Flutter requires access to camera.</string>
+```
+
+You can find more information in the [InAppWebView WebRTC documentation](https://inappwebview.dev/docs/web-rtc) 
