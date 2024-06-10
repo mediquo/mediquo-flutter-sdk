@@ -10,7 +10,7 @@ The package uses the [InAppWebView v6](https://inappwebview.dev/) plugin in orde
 
 The MediQuo Flutter SDK can be added in your project following the next steps:
 
-- Add the Github package `https://github.com/mediquo/mediquo-flutter-sdk.git` the `pubspec.yaml` file in your Flutter project. Specify the version by the tag in the [reference](https://github.com/mediquo/mediquo-flutter-sdk/tags).
+- Add the Github package `https://github.com/mediquo/mediquo-flutter-sdk.git` the `pubspec.yaml` file in your Flutter project. Consult the [reference](https://github.com/mediquo/mediquo-flutter-sdk/tags) to specify the version by tag .
 
 ```yaml
   mediquo_flutter_sdk:
