@@ -39,15 +39,16 @@ Whenever you want to present the MediQuo functionality, add the lines below:
 MediquoWidget(
     apiKey: API_KEY,
     token: TOKEN,
-    onDownload: onDownloadListener,
-    onMicrophonePermission: onMicrophonePermission,
-    onCameraPermission: onCameraPermission
+    onDownload: onDownloadCallback,
+    onLoadUrl: onLoadUrlCallback,
+    onMicrophonePermission: onMicrophonePermissionCallback,
+    onCameraPermission: onCameraPermissionCallback
 );
 ``` 
 
-### Listeners
+### Callbacks
 
-In order to have a full functionality of the widget, the init method requires the definition of some listener functions. These functions should define the behaviour of your application in the next cases:
+In order to have a full functionality of the widget, the init method requires the definition of some callback functions. These functions should define the behaviour of your application in the next cases:
 - onDownload(string downloadUrl): It will be invoked when the user tries to download a file in the SDK. 
 - onLoadUrl(string url): It will be invoked when the user tries to open a url sent to the chat in the SDK. 
 - onMicrophonePermission(): It will be invoked when the user is accessing to a video call and requires the device microphone permission.
@@ -87,7 +88,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
 
-  static onDownloadListener(String downloadUrl) async {
+  static onDownloadCallback(String downloadUrl) async {
     final tempDir = Platform.isAndroid
         ? await getExternalStorageDirectory()
         : await getApplicationDocumentsDirectory();
@@ -103,16 +104,16 @@ class _MyAppState extends State<MyApp> {
     return;
   }
 
-  static onLoadUrlListener(String url) async {
+  static onLoadUrlCallback(String url) async {
     launchUrl(Uri.parse(url));
     return;
   }
 
-  static onMicrophonePermission() async {
+  static onMicrophonePermissionCallback() async {
     await Permission.microphone.request();
   }
 
-  static onCameraPermission() async {
+  static onCameraPermissionCallback() async {
     await Permission.camera.request();
   }
 
@@ -129,10 +130,10 @@ class _MyAppState extends State<MyApp> {
                 return const MediquoWidget(
                     apiKey: '',
                     token: '',
-                    onDownload: onDownloadListener,
-                    onLoadUrl: onLoadUrlListener,
-                    onMicrophonePermission: onMicrophonePermission,
-                    onCameraPermission: onCameraPermission,
+                    onDownload: onDownloadCallback,
+                    onLoadUrl: onLoadUrlCallback,
+                    onMicrophonePermission: onMicrophonePermissionCallback,
+                    onCameraPermission: onCameraPermissionCallback,
                 );
               },
               )
@@ -147,9 +148,9 @@ class _MyAppState extends State<MyApp> {
 
 Notice the next points in the code:
 - Api key and token are empty values. 
-- Camera and microphone permission listeners are implemented using the [Flutter permission_handler plugin](https://pub.dev/packages/permission_handler).
-- Download listener is implemented using the [Flutter downloader plugin](https://pub.dev/packages/flutter_downloader)
-- Load URL listener is implemented using the [Flutter URL launcher plugin](https://pub.dev/packages/url_launcher)
+- Camera and microphone permission callbacks are implemented using the [Flutter permission_handler plugin](https://pub.dev/packages/permission_handler).
+- Download callback is implemented using the [Flutter downloader plugin](https://pub.dev/packages/flutter_downloader)
+- Load URL callback is implemented using the [Flutter URL launcher plugin](https://pub.dev/packages/url_launcher)
 
 In order to grant permissions, the `AndroidManifest.xml` was modified by adding these lines:
 
