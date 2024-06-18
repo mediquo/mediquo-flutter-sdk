@@ -104,7 +104,7 @@ class _MediquoWidgetState extends State<MediquoWidget> {
                   },
                   shouldOverrideUrlLoading: (InAppWebViewController controller, NavigationAction navigationAction) async {
                     final uri = navigationAction.request.url!;
-                    if (uri.toString().startsWith('https://chat-server.mediquo.com/getFile?')) {
+                    if (uri.toString().contains('mediquo.com')) {
                       return NavigationActionPolicy.ALLOW;
                     }
 
