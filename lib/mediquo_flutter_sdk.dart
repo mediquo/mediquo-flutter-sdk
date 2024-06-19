@@ -14,6 +14,7 @@ class MediquoWidget extends StatefulWidget {
   final String apiKey;
   final String token;
   final Function(String) onDownload;
+  final Function(String) onLoadUrl;
   final Function() onMicrophonePermission;
   final Function() onCameraPermission;
 
@@ -23,6 +24,7 @@ class MediquoWidget extends StatefulWidget {
     required this.apiKey,
     required this.token,
     required this.onDownload,
+    required this.onLoadUrl,
     required this.onMicrophonePermission,
     required this.onCameraPermission,
   }) : super(key: key);
@@ -99,6 +101,15 @@ class _MediquoWidgetState extends State<MediquoWidget> {
                         resources: request.resources,
                         action: PermissionResponseAction.GRANT
                     );
+                  },
+                  shouldOverrideUrlLoading: (InAppWebViewController controller, NavigationAction navigationAction) async {
+                    final uri = navigationAction.request.url!;
+                    if (uri.toString().contains('mediquo.com')) {
+                      return NavigationActionPolicy.ALLOW;
+                    }
+
+                    widget.onLoadUrl(uri.toString());
+                    return NavigationActionPolicy.CANCEL;
                   },
                 ),
               ],
