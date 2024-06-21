@@ -50,12 +50,14 @@ class _MediquoWidgetState extends State<MediquoWidget> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: false,
-        onPopInvoked: (bool didPop) async {
+        canPop: true,
+        /*onPopInvoked: (bool didPop) async {
           if  (didPop) {
             return;
           }
-        },
+
+          return true;
+        },*/
         child:  Scaffold(
           appBar: AppBar(
               title: const Text('')
@@ -76,6 +78,7 @@ class _MediquoWidgetState extends State<MediquoWidget> {
                         iframeAllow: "camera; microphone",
                         iframeAllowFullscreen: true,
                         useOnDownloadStart: true,
+                        cacheEnabled: false
                       ),
                       onLoadStart: (controller, url) {
                         if (url != null) {
