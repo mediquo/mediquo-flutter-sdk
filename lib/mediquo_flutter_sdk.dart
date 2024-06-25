@@ -118,6 +118,12 @@ class _MediquoWidgetState extends State<MediquoWidget> {
                       shouldOverrideUrlLoading: (InAppWebViewController controller, NavigationAction navigationAction) async {
                         final uri = navigationAction.request.url!;
                         if (uri.toString().contains('mediquo.com')) {
+
+                          if (uri.toString().contains('privacy') | uri.toString().contains('terms')) {
+                            widget.onLoadUrl(uri.toString());
+                            return NavigationActionPolicy.CANCEL;
+                          }
+                          
                           return NavigationActionPolicy.ALLOW;
                         }
 
