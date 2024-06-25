@@ -58,6 +58,9 @@ class _MediquoWidgetState extends State<MediquoWidget> {
           return;
         },*/
         child:  Scaffold(
+          /*appBar: AppBar(
+              title: const Text('')
+          ),*/
           body: Column(children: <Widget>[
             Expanded(
                 child: Stack(
