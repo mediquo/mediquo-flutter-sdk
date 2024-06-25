@@ -50,18 +50,14 @@ class _MediquoWidgetState extends State<MediquoWidget> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-        canPop: true,
-        /*onPopInvoked: (bool didPop) async {
+        canPop: false,
+        /* onPopInvoked: (bool didPop) async {
           if  (didPop) {
             return;
           }
-
-          return true;
+          return;
         },*/
         child:  Scaffold(
-          appBar: AppBar(
-              title: const Text('')
-          ),
           body: Column(children: <Widget>[
             Expanded(
                 child: Stack(
