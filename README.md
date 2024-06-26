@@ -163,6 +163,19 @@ In order to grant permissions, the `AndroidManifest.xml` was modified by adding 
 <uses-permission android:name="android.permission.AUDIO_CAPTURE" />
 ```
 
+In the <application> tag insert this provider configuration:
+```xml
+<provider
+    android:name="com.pichillilorenzo.flutter_inappwebview_android.InAppWebViewFileProvider"
+    android:authorities="${applicationId}.flutter_inappwebview_android.fileprovider"
+    android:exported="false"
+    android:grantUriPermissions="true">
+    <meta-data
+        android:name="android.support.FILE_PROVIDER_PATHS"
+        android:resource="@xml/provider_paths" />
+</provider>
+```
+
 Also the `Info.plist` file:
 ```
 <key>NSMicrophoneUsageDescription</key>
