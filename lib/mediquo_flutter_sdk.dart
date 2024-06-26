@@ -9,6 +9,14 @@ enum MediquoWidgetEnvironment {
   sandbox
 }
 
+class MediquoWidgetTheme {
+  final String title;
+
+  const MediquoWidgetTheme([
+    this.title = "Resuelve tus dudas"
+  ]);
+}
+
 class MediquoWidget extends StatefulWidget {
   final MediquoWidgetEnvironment environment;
   final String apiKey;
@@ -17,6 +25,7 @@ class MediquoWidget extends StatefulWidget {
   final Function(String) onLoadUrl;
   final Function() onMicrophonePermission;
   final Function() onCameraPermission;
+  final MediquoWidgetTheme theme;
 
   const MediquoWidget({
     Key? key,
@@ -27,6 +36,7 @@ class MediquoWidget extends StatefulWidget {
     required this.onLoadUrl,
     required this.onMicrophonePermission,
     required this.onCameraPermission,
+    this.theme = const MediquoWidgetTheme(),
   }) : super(key: key);
 
   @override
@@ -44,7 +54,7 @@ class _MediquoWidgetState extends State<MediquoWidget> {
   @override
   void initState() {
     super.initState();
-    url = 'https://widget.mediquo.com/integration/index.html?api_key=${widget.apiKey}&token=${widget.token}&environment=${widget.environment.name}';
+    url = 'https://widget.mediquo.com/integration/index.html?api_key=${widget.apiKey}&token=${widget.token}&environment=${widget.environment.name}&theme_title=${widget.theme.title}';
   }
 
   @override
@@ -118,6 +128,12 @@ class _MediquoWidgetState extends State<MediquoWidget> {
                       shouldOverrideUrlLoading: (InAppWebViewController controller, NavigationAction navigationAction) async {
                         final uri = navigationAction.request.url!;
                         if (uri.toString().contains('mediquo.com')) {
+
+                          if (uri.toString().contains('privacy') | uri.toString().contains('terms')) {
+                            widget.onLoadUrl(uri.toString());
+                            return NavigationActionPolicy.CANCEL;
+                          }
+                          
                           return NavigationActionPolicy.ALLOW;
                         }
 
