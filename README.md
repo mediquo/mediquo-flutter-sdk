@@ -163,7 +163,7 @@ In order to grant permissions, the `AndroidManifest.xml` was modified by adding 
 <uses-permission android:name="android.permission.AUDIO_CAPTURE" />
 ```
 
-In the <application> tag insert this provider configuration:
+In the `<application>` tag insert this provider configuration:
 ```xml
 <provider
     android:name="com.pichillilorenzo.flutter_inappwebview_android.InAppWebViewFileProvider"
