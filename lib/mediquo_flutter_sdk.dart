@@ -10,11 +10,11 @@ enum MediquoWidgetEnvironment {
 }
 
 class MediquoWidgetTheme {
-  final String title;
+  final Color containerColor;
 
-  const MediquoWidgetTheme([
-    this.title = "Resuelve tus dudas"
-  ]);
+  const MediquoWidgetTheme({
+    this.containerColor = Colors.white
+  });
 }
 
 class MediquoWidget extends StatefulWidget {
@@ -54,7 +54,7 @@ class _MediquoWidgetState extends State<MediquoWidget> {
   @override
   void initState() {
     super.initState();
-    url = 'https://widget.mediquo.com/integration/index.html?api_key=${widget.apiKey}&token=${widget.token}&environment=${widget.environment.name}&theme_title=${widget.theme.title}';
+    url = 'https://widget.mediquo.com/integration/index.html?api_key=${widget.apiKey}&token=${widget.token}&environment=${widget.environment.name}}';
   }
 
   @override
@@ -68,7 +68,7 @@ class _MediquoWidgetState extends State<MediquoWidget> {
           return;
         },*/
         child: new Container(
-          color: Colors.transparent,
+          color: widget.theme.containerColor,
           child: new SafeArea(
               child: Scaffold(
                 body: Column(children: <Widget>[
