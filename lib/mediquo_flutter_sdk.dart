@@ -54,7 +54,7 @@ class _MediquoWidgetState extends State<MediquoWidget> {
   @override
   void initState() {
     super.initState();
-    url = 'https://widget.mediquo.com/integration/index.html?api_key=${widget.apiKey}&token=${widget.token}&environment=${widget.environment.name}}';
+    url = 'https://widget.mediquo.com/integration/index.html?api_key=${widget.apiKey}&token=${widget.token}&environment=${widget.environment.name}';
   }
 
   @override
