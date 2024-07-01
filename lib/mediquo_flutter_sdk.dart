@@ -9,6 +9,14 @@ enum MediquoWidgetEnvironment {
   sandbox
 }
 
+class MediquoWidgetTheme {
+  final Color containerColor;
+
+  const MediquoWidgetTheme({
+    this.containerColor = Colors.white
+  });
+}
+
 class MediquoWidget extends StatefulWidget {
   final MediquoWidgetEnvironment environment;
   final String apiKey;
@@ -17,6 +25,7 @@ class MediquoWidget extends StatefulWidget {
   final Function(String) onLoadUrl;
   final Function() onMicrophonePermission;
   final Function() onCameraPermission;
+  final MediquoWidgetTheme theme;
 
   const MediquoWidget({
     Key? key,
@@ -27,6 +36,7 @@ class MediquoWidget extends StatefulWidget {
     required this.onLoadUrl,
     required this.onMicrophonePermission,
     required this.onCameraPermission,
+    this.theme = const MediquoWidgetTheme(),
   }) : super(key: key);
 
   @override
@@ -58,7 +68,7 @@ class _MediquoWidgetState extends State<MediquoWidget> {
           return;
         },*/
         child: new Container(
-          color: Colors.transparent,
+          color: widget.theme.containerColor,
           child: new SafeArea(
               child: Scaffold(
                 body: Column(children: <Widget>[
@@ -113,22 +123,22 @@ class _MediquoWidgetState extends State<MediquoWidget> {
                                 await widget.onCameraPermission();
                               }
 
-                              return PermissionResponse(
-                                  resources: request.resources,
-                                  action: PermissionResponseAction.GRANT
-                              );
-                            },
-                            shouldOverrideUrlLoading: (InAppWebViewController controller, NavigationAction navigationAction) async {
-                              final uri = navigationAction.request.url!;
-                              if (uri.toString().contains('mediquo.com')) {
+                        return PermissionResponse(
+                            resources: request.resources,
+                            action: PermissionResponseAction.GRANT
+                        );
+                        },
+                      shouldOverrideUrlLoading: (InAppWebViewController controller, NavigationAction navigationAction) async {
+                        final uri = navigationAction.request.url!;
+                        if (uri.toString().contains('mediquo.com')) {
 
-                                if (uri.toString().contains('privacy') | uri.toString().contains('terms')) {
-                                  widget.onLoadUrl(uri.toString());
-                                  return NavigationActionPolicy.CANCEL;
-                                }
+                          if (uri.toString().contains('privacy') | uri.toString().contains('terms')) {
+                            widget.onLoadUrl(uri.toString());
+                            return NavigationActionPolicy.CANCEL;
+                          }
 
-                                return NavigationActionPolicy.ALLOW;
-                              }
+                          return NavigationActionPolicy.ALLOW;
+                        }
 
                               widget.onLoadUrl(uri.toString());
                               return NavigationActionPolicy.CANCEL;
