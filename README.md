@@ -43,6 +43,7 @@ MediquoWidget(
     onLoadUrl: onLoadUrlCallback,
     onMicrophonePermission: onMicrophonePermissionCallback,
     onCameraPermission: onCameraPermissionCallback
+    theme: const MediquoWidgetTheme() // optional
 );
 ``` 
 
@@ -53,6 +54,14 @@ In order to have a full functionality of the widget, the init method requires th
 - onLoadUrl(string url): It will be invoked when the user tries to open a url sent to the chat in the SDK. 
 - onMicrophonePermission(): It will be invoked when the user is accessing to a video call and requires the device microphone permission.
 - onCameraPermission(): It will be invoked when the user is accessing to a video call and requires the device camera permission.
+
+### Customization
+
+You can optionally pass the `MediquoWidgetTheme` customization object as `theme` to the MediQuoWidget instance. The next properties can be defined:
+
+| Nombre         | Tipo  | Valor por defecto |
+|----------------|-------|-------------------|
+| containerColor | Color | Colors.white      |
 
 ## Example
 
@@ -67,6 +76,7 @@ import 'package:mediquo_flutter_sdk/mediquo_flutter_sdk.dart';
 
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 Future main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -134,6 +144,9 @@ class _MyAppState extends State<MyApp> {
                     onLoadUrl: onLoadUrlCallback,
                     onMicrophonePermission: onMicrophonePermissionCallback,
                     onCameraPermission: onCameraPermissionCallback,
+                    theme: const MediquoWidgetTheme(
+                      containerColor: Colors.white
+                    ),
                 );
               },
               )
