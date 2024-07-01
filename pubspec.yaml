@@ -1,6 +1,6 @@
 name: mediquo_flutter_sdk
 description: "MediQuo Flutter SDK"
-version: 0.2.0
+version: 0.2.2
 homepage: "https://mediquo.com"
 
 environment:
