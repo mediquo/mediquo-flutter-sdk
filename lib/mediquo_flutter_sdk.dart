@@ -1,7 +1,6 @@
 library mediquo_flutter_sdk;
 
 import 'dart:async';
-// import 'dart:developer' as developer;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -77,7 +76,6 @@ class _MediquoWidgetState extends State<MediquoWidget> {
 
   Future<void> initConnectivity() async {
     late List<ConnectivityResult> result;
-    // Platform messages may fail, so we use a try/catch PlatformException.
     try {
       result = await _connectivity.checkConnectivity();
     } on PlatformException catch (e) {
@@ -151,9 +149,6 @@ class _MediquoWidgetState extends State<MediquoWidget> {
                             ),
                             onLoadStart: (controller, url) {
                               /*
-                              developer.log("ON LOAD START");
-                              print("ON LOAD START");
-                              print(_isNotConnectedToInternet());
                               if (_isNotConnectedToInternet()) {
                                 _showConnectionErrorAlertDialog();
                               }*/
