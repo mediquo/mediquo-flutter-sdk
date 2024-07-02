@@ -4,7 +4,9 @@ The MediQuo Flutter SDK allows to integrate the MediQuo web widget in your Flutt
 - Chat
 - Video call
 
-The package uses the [InAppWebView v6](https://inappwebview.dev/) plugin in order to load and interact with a MediQuo web widget. 
+The package uses the next plugins: 
+- [InAppWebView v6](https://inappwebview.dev/) plugin in order to load and interact with a MediQuo web widget.
+- [Connectivity plus v6](https://pub.dev/packages/connectivity_plus) plugin in order check internet connectivity.
 
 ## Installation
 
