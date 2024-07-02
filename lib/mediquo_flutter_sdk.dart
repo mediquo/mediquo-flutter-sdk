@@ -61,11 +61,10 @@ class _MediquoWidgetState extends State<MediquoWidget> {
 
   @override
   void initState() {
-    super.initState();
-    url = 'https://widget.mediquo.com/integration/index.html?api_key=${widget.apiKey}&token=${widget.token}&environment=${widget.environment.name}';
-
     initConnectivity();
     _connectivitySubscription = _connectivity.onConnectivityChanged.listen(_updateConnectionStatus);
+    url = 'https://widget.mediquo.com/integration/index.html?api_key=${widget.apiKey}&token=${widget.token}&environment=${widget.environment.name}';
+    super.initState();
   }
 
   @override
@@ -148,11 +147,6 @@ class _MediquoWidgetState extends State<MediquoWidget> {
                                 cacheEnabled: false
                             ),
                             onLoadStart: (controller, url) {
-                              /*
-                              if (_isNotConnectedToInternet()) {
-                                _showConnectionErrorAlertDialog();
-                              }*/
-
                               if (url != null) {
                                 setState(() {
                                   this.url = url.toString();
@@ -172,7 +166,15 @@ class _MediquoWidgetState extends State<MediquoWidget> {
                                   handlerName: 'mediquo_flutter_sdk_close',
                                   callback: (args) {
                                     Navigator.pop(context);
-                                  });
+                                  }
+                              );
+
+                              controller.addJavaScriptHandler(
+                                  handlerName: 'mediquo_flutter_sdk_connection_error_alert',
+                                  callback: (args) {
+                                    _showConnectionErrorAlertDialog();
+                                  }
+                              );
                             },
                             onDownloadStartRequest: (InAppWebViewController controller, DownloadStartRequest request) {
                               widget.onDownload(request.url.rawValue);
