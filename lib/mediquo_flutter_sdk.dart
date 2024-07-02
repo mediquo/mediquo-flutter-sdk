@@ -1,8 +1,13 @@
 library mediquo_flutter_sdk;
 
+import 'dart:async';
+// import 'dart:developer' as developer;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+
 
 enum MediquoWidgetEnvironment {
   production,
@@ -51,10 +56,65 @@ class _MediquoWidgetState extends State<MediquoWidget> {
   bool? isSecure;
   InAppWebViewController? webViewController;
 
+  List<ConnectivityResult> _connectionStatus = [ConnectivityResult.none];
+  final Connectivity _connectivity = Connectivity();
+  late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
+
   @override
   void initState() {
     super.initState();
     url = 'https://widget.mediquo.com/integration/index.html?api_key=${widget.apiKey}&token=${widget.token}&environment=${widget.environment.name}';
+
+    initConnectivity();
+    _connectivitySubscription = _connectivity.onConnectivityChanged.listen(_updateConnectionStatus);
+  }
+
+  @override
+  void dispose() {
+    _connectivitySubscription.cancel();
+    super.dispose();
+  }
+
+  Future<void> initConnectivity() async {
+    late List<ConnectivityResult> result;
+    // Platform messages may fail, so we use a try/catch PlatformException.
+    try {
+      result = await _connectivity.checkConnectivity();
+    } on PlatformException catch (e) {
+      return;
+    }
+
+    if (!mounted) {
+      return Future.value(null);
+    }
+
+    return _updateConnectionStatus(result);
+  }
+
+  Future<void> _updateConnectionStatus(List<ConnectivityResult> result) async {
+    setState(() {
+      _connectionStatus = result;
+    });
+  }
+
+  _showConnectionErrorAlertDialog() {
+    showDialog<String>(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: const Text('Error de conexión'),
+        content: const Text('El contenido no se ha podido cargar. Verifica tu conexión o inténtalo más tarde.'),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.pop(context, 'Cerrar'),
+            child: const Text('Cerrar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  _isNotConnectedToInternet() {
+    return _connectionStatus[0] == ConnectivityResult.none;
   }
 
   @override
@@ -90,6 +150,14 @@ class _MediquoWidgetState extends State<MediquoWidget> {
                                 cacheEnabled: false
                             ),
                             onLoadStart: (controller, url) {
+                              /*
+                              developer.log("ON LOAD START");
+                              print("ON LOAD START");
+                              print(_isNotConnectedToInternet());
+                              if (_isNotConnectedToInternet()) {
+                                _showConnectionErrorAlertDialog();
+                              }*/
+
                               if (url != null) {
                                 setState(() {
                                   this.url = url.toString();
@@ -123,22 +191,26 @@ class _MediquoWidgetState extends State<MediquoWidget> {
                                 await widget.onCameraPermission();
                               }
 
-                        return PermissionResponse(
-                            resources: request.resources,
-                            action: PermissionResponseAction.GRANT
-                        );
-                        },
-                      shouldOverrideUrlLoading: (InAppWebViewController controller, NavigationAction navigationAction) async {
-                        final uri = navigationAction.request.url!;
-                        if (uri.toString().contains('mediquo.com')) {
+                              return PermissionResponse(
+                                resources: request.resources,
+                                action: PermissionResponseAction.GRANT
+                              );
+                            },
+                            shouldOverrideUrlLoading: (InAppWebViewController controller, NavigationAction navigationAction) async {
+                              if (_isNotConnectedToInternet()) {
+                                _showConnectionErrorAlertDialog();
+                                return NavigationActionPolicy.CANCEL;
+                              }
 
-                          if (uri.toString().contains('privacy') | uri.toString().contains('terms')) {
-                            widget.onLoadUrl(uri.toString());
-                            return NavigationActionPolicy.CANCEL;
-                          }
+                              final uri = navigationAction.request.url!;
+                              if (uri.toString().contains('mediquo.com')) {
+                                if (uri.toString().contains('privacy') | uri.toString().contains('terms')) {
+                                  widget.onLoadUrl(uri.toString());
+                                  return NavigationActionPolicy.CANCEL;
+                                }
 
-                          return NavigationActionPolicy.ALLOW;
-                        }
+                                return NavigationActionPolicy.ALLOW;
+                              }
 
                               widget.onLoadUrl(uri.toString());
                               return NavigationActionPolicy.CANCEL;
