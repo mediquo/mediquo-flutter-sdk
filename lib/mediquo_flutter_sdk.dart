@@ -341,12 +341,7 @@ class _MediquoWidgetState extends State<MediquoWidget> {
             ];
           }
 
-          return _loadingPage(); /*Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: children,
-            ),
-          );*/
+          return _loadingPage();
         }
     );
   }
