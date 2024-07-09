@@ -1,8 +1,6 @@
 library mediquo_flutter_sdk;
 
 import 'dart:async';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
@@ -233,6 +231,7 @@ class _MediquoWidgetState extends State<MediquoWidget> {
                               );
                             },
                             shouldOverrideUrlLoading: (InAppWebViewController controller, NavigationAction navigationAction) async {
+
                               if (_isNotConnectedToInternet()) {
                                 _showConnectionErrorAlertDialog();
                                 return NavigationActionPolicy.CANCEL;
