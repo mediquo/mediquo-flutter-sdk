@@ -1,7 +1,6 @@
 library mediquo_flutter_sdk;
 
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
@@ -114,8 +113,36 @@ class _MediquoWidgetState extends State<MediquoWidget> {
     return _connectionStatus[0] == ConnectivityResult.none;
   }
 
-  @override
-  Widget build(BuildContext context) {
+  _checkRequestError(WebUri failedUrl) {
+    if (_isMainPage(failedUrl)) {
+      Navigator.pop(context);
+      _showConnectionErrorAlertDialog();
+    }
+
+    if (_isInmediateVideocallUrl(failedUrl)) {
+      _showConnectionErrorAlertDialog();
+    }
+  }
+
+  _isMainPage(WebUri failedUrl) {
+    return failedUrl.toString() == url;
+  }
+
+  _isInmediateVideocallUrl(WebUri failedUrl) {
+    return failedUrl.toString().contains('consultations/v1/immediate-videocall');
+  }
+
+  Future<String> _checkWidgetLoading() async {
+    late List<ConnectivityResult> result;
+    result = await _connectivity.checkConnectivity();
+    if (result[0] == ConnectivityResult.none) {
+      return Future.error("No connectivity");
+    }
+
+    return Future.value("ok");
+  }
+
+  _loadWidget() {
     return PopScope(
         canPop: false,
         /* onPopInvoked: (bool didPop) async {
@@ -146,6 +173,16 @@ class _MediquoWidgetState extends State<MediquoWidget> {
                                 useOnDownloadStart: true,
                                 cacheEnabled: false
                             ),
+                            onReceivedHttpError: (
+                                InAppWebViewController controller,
+                                WebResourceRequest request,
+                                WebResourceResponse errorResponse
+                            ) => _checkRequestError(request.url),
+                            onReceivedError: (
+                                InAppWebViewController controller,
+                                WebResourceRequest request,
+                                WebResourceError error
+                            ) => _checkRequestError(request.url),
                             onLoadStart: (controller, url) {
                               if (url != null) {
                                 setState(() {
@@ -194,6 +231,7 @@ class _MediquoWidgetState extends State<MediquoWidget> {
                               );
                             },
                             shouldOverrideUrlLoading: (InAppWebViewController controller, NavigationAction navigationAction) async {
+
                               if (_isNotConnectedToInternet()) {
                                 _showConnectionErrorAlertDialog();
                                 return NavigationActionPolicy.CANCEL;
@@ -219,6 +257,101 @@ class _MediquoWidgetState extends State<MediquoWidget> {
               )
           ),
         )
+    );
+  }
+  _loadingPage() {
+    return Container(
+      color: widget.theme.containerColor,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Cargando'),
+        ),
+        body: Column(children: <Widget>[
+          Expanded(
+              child: Stack()
+          ),
+        ]),
+      ),
+    );
+  }
+  _errorPage() {
+    return Scaffold(
+      backgroundColor: Colors.grey,
+      body: Center(
+        child: Card.outlined(
+          margin: EdgeInsets.only(right: 16.0, left: 16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Padding(
+                padding: EdgeInsets.only(top: 32.0, bottom: 16.0, left: 32.0, right: 32.0),
+                child: Align(
+                  alignment: Alignment.topLeft,
+                  child: Icon(
+                      Icons.wifi_off,
+                      color: Colors.red,
+                      size: 32.0,
+                  ),
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.only(top: 0.0, bottom: 16.0, left: 32.0, right: 32.0),
+                child: Align(
+                  alignment: Alignment.topLeft,
+                  child: Text(
+                    'Error de conexión',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16.0
+                    )
+                  ),
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.only(top: 0.0, bottom: 16.0, left: 32.0, right: 32.0),
+                child: Align(
+                  alignment: Alignment.topLeft,
+                  child: Text(
+                    'El contenido no se ha podido cargar. Verifica tu conexión o inténtalo más tarde.',
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontSize: 16.0
+                    ),
+                  ),
+                ),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: <Widget>[
+                  const SizedBox(width: 8),
+                  TextButton(
+                    child: const Text('Cerrar'),
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<String>(
+        future: _checkWidgetLoading(),
+        builder: (BuildContext context, AsyncSnapshot<String> snapshot) {
+          if (snapshot.hasError) {
+            return _errorPage();
+          } else if (snapshot.hasData) {
+            return _loadWidget();
+          }
+          return _loadingPage();
+        }
     );
   }
 
