@@ -54,7 +54,6 @@ class _MediquoWidgetState extends State<MediquoWidget> {
   String url = '';
   String title = '';
   bool? isSecure;
-  bool isLoaded = false;
   InAppWebViewController? webViewController;
 
   List<ConnectivityResult> _connectionStatus = [ConnectivityResult.none];
@@ -116,7 +115,26 @@ class _MediquoWidgetState extends State<MediquoWidget> {
     return _connectionStatus[0] == ConnectivityResult.none;
   }
 
-  Future<String> _isLoaded() async {
+  _checkRequestError(WebUri failedUrl) {
+    if (_isMainPage(failedUrl)) {
+      Navigator.pop(context);
+      _showConnectionErrorAlertDialog();
+    }
+
+    if (_isInmediateVideocallUrl(failedUrl)) {
+      _showConnectionErrorAlertDialog();
+    }
+  }
+
+  _isMainPage(WebUri failedUrl) {
+    return failedUrl.toString() == url;
+  }
+
+  _isInmediateVideocallUrl(WebUri failedUrl) {
+    return failedUrl.toString().contains('consultations/v1/immediate-videocall');
+  }
+
+  Future<String> _checkWidgetLoading() async {
     late List<ConnectivityResult> result;
     result = await _connectivity.checkConnectivity();
     if (result[0] == ConnectivityResult.none) {
@@ -157,6 +175,16 @@ class _MediquoWidgetState extends State<MediquoWidget> {
                                 useOnDownloadStart: true,
                                 cacheEnabled: false
                             ),
+                            onReceivedHttpError: (
+                                InAppWebViewController controller,
+                                WebResourceRequest request,
+                                WebResourceResponse errorResponse
+                            ) => _checkRequestError(request.url),
+                            onReceivedError: (
+                                InAppWebViewController controller,
+                                WebResourceRequest request,
+                                WebResourceError error
+                            ) => _checkRequestError(request.url),
                             onLoadStart: (controller, url) {
                               if (url != null) {
                                 setState(() {
@@ -187,9 +215,6 @@ class _MediquoWidgetState extends State<MediquoWidget> {
                                   }
                               );
                             },
-                            /*onConsoleMessage: (InAppWebViewController controller, ConsoleMessage consoleMessage) {
-                                print(consoleMessage);
-                            },*/
                             onDownloadStartRequest: (InAppWebViewController controller, DownloadStartRequest request) {
                               widget.onDownload(request.url.rawValue);
                             },
@@ -203,8 +228,8 @@ class _MediquoWidgetState extends State<MediquoWidget> {
                               }
 
                               return PermissionResponse(
-                                  resources: request.resources,
-                                  action: PermissionResponseAction.GRANT
+                                resources: request.resources,
+                                action: PermissionResponseAction.GRANT
                               );
                             },
                             shouldOverrideUrlLoading: (InAppWebViewController controller, NavigationAction navigationAction) async {
@@ -319,28 +344,13 @@ class _MediquoWidgetState extends State<MediquoWidget> {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<String>(
-        future: _isLoaded(),
+        future: _checkWidgetLoading(),
         builder: (BuildContext context, AsyncSnapshot<String> snapshot) {
-
-          List<Widget> children;
           if (snapshot.hasError) {
             return _errorPage();
           } else if (snapshot.hasData) {
             return _loadWidget();
-          } else {
-            children = <Widget>[
-              const Icon(
-                Icons.error_outline,
-                color: Colors.green,
-                size: 60,
-              ),
-              Padding(
-                padding: const EdgeInsets.only(top: 16),
-                child: Text('OK'),
-              ),
-            ];
           }
-
           return _loadingPage();
         }
     );
