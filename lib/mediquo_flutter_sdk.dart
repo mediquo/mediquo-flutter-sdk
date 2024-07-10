@@ -212,8 +212,6 @@ class _MediquoWidgetState extends State<MediquoWidget> {
                               controller.addJavaScriptHandler(
                                   handlerName: 'mediquo_flutter_sdk_close',
                                   callback: (args) {
-                                    print("mediquo_flutter_sdk_close");
-                                    print(args);
                                     Navigator.pop(context);
                                   }
                               );
@@ -221,8 +219,6 @@ class _MediquoWidgetState extends State<MediquoWidget> {
                               controller.addJavaScriptHandler(
                                   handlerName: 'mediquo_flutter_sdk_camera_permission',
                                   callback: (args) async {
-                                    print("mediquo_flutter_sdk_camera_permission");
-                                    print(args);
                                     await widget.onCameraPermission();
                                   }
                               );
