@@ -1,6 +1,7 @@
 library mediquo_flutter_sdk;
 
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
@@ -39,7 +40,7 @@ class MediquoWidget extends StatefulWidget {
     required this.onLoadUrl,
     required this.onMicrophonePermission,
     required this.onCameraPermission,
-    this.theme = const MediquoWidgetTheme(),
+    this.theme = const MediquoWidgetTheme()
   }) : super(key: key);
 
   @override
@@ -62,8 +63,17 @@ class _MediquoWidgetState extends State<MediquoWidget> {
   void initState() {
     initConnectivity();
     _connectivitySubscription = _connectivity.onConnectivityChanged.listen(_updateConnectionStatus);
-    url = 'https://widget.mediquo.com/integration/index.html?api_key=${widget.apiKey}&token=${widget.token}&environment=${widget.environment.name}';
+    url = 'https://widget.mediquo.com/integration/index.html?api_key=${widget.apiKey}&token=${widget.token}&platform=${_getPlatform()}&environment=${widget.environment.name}';
     super.initState();
+  }
+
+  _getPlatform()
+  {
+    if (Platform.isIOS) {
+      return 'ios';
+    }
+
+    return 'android';
   }
 
   @override
@@ -203,6 +213,13 @@ class _MediquoWidgetState extends State<MediquoWidget> {
                                   handlerName: 'mediquo_flutter_sdk_close',
                                   callback: (args) {
                                     Navigator.pop(context);
+                                  }
+                              );
+
+                              controller.addJavaScriptHandler(
+                                  handlerName: 'mediquo_flutter_sdk_camera_permission',
+                                  callback: (args) async {
+                                    await widget.onCameraPermission();
                                   }
                               );
 
