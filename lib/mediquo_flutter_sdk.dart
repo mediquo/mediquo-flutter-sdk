@@ -27,8 +27,8 @@ class MediquoWidget extends StatefulWidget {
   final String token;
   final Function(String) onDownload;
   final Function(String) onLoadUrl;
-  final Function() onMicrophonePermission;
-  final Function() onCameraPermission;
+  final Future Function() onMicrophonePermission;
+  final Future Function() onCameraPermission;
   final MediquoWidgetTheme theme;
 
   const MediquoWidget({
