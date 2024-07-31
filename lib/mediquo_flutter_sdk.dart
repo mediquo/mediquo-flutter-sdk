@@ -227,6 +227,13 @@ class _MediquoWidgetState extends State<MediquoWidget> with WidgetsBindingObserv
                               );
 
                               controller.addJavaScriptHandler(
+                                  handlerName: 'mediquo_flutter_sdk_reload',
+                                  callback: (args) {
+                                    webViewController?.reload();
+                                  }
+                              );
+
+                              controller.addJavaScriptHandler(
                                   handlerName: 'mediquo_flutter_sdk_camera_permission',
                                   callback: (args) async {
                                     await widget.onCameraPermission();
@@ -257,9 +264,6 @@ class _MediquoWidgetState extends State<MediquoWidget> with WidgetsBindingObserv
                                 action: PermissionResponseAction.GRANT
                               );
                             },
-                            // onConsoleMessage: (InAppWebViewController controller, ConsoleMessage consoleMessage) {
-                            //   print(consoleMessage);
-                            // },
                             shouldOverrideUrlLoading: (InAppWebViewController controller, NavigationAction navigationAction) async {
 
                               if (_isNotConnectedToInternet()) {
