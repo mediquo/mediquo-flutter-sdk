@@ -27,8 +27,8 @@ class MediquoWidget extends StatefulWidget {
   final String token;
   final Function(String) onDownload;
   final Function(String) onLoadUrl;
-  final Function() onMicrophonePermission;
-  final Function() onCameraPermission;
+  final Future Function() onMicrophonePermission;
+  final Future Function() onCameraPermission;
   final MediquoWidgetTheme theme;
 
   const MediquoWidget({
@@ -47,7 +47,7 @@ class MediquoWidget extends StatefulWidget {
   State<MediquoWidget> createState() => _MediquoWidgetState();
 }
 
-class _MediquoWidgetState extends State<MediquoWidget> {
+class _MediquoWidgetState extends State<MediquoWidget> with WidgetsBindingObserver {
   final GlobalKey webViewKey = GlobalKey();
 
   String url = '';
@@ -62,6 +62,7 @@ class _MediquoWidgetState extends State<MediquoWidget> {
   @override
   void initState() {
     initConnectivity();
+    WidgetsBinding.instance.addObserver(this);
     _connectivitySubscription = _connectivity.onConnectivityChanged.listen(_updateConnectionStatus);
     url = 'https://widget.mediquo.com/integration/index.html?api_key=${widget.apiKey}&token=${widget.token}&platform=${_getPlatform()}&environment=${widget.environment.name}';
     super.initState();
@@ -79,7 +80,15 @@ class _MediquoWidgetState extends State<MediquoWidget> {
   @override
   void dispose() {
     _connectivitySubscription.cancel();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) async {
+    if (state == AppLifecycleState.resumed) {
+      await webViewController?.evaluateJavascript(source: "window.parent.postMessage({ command: 'mediquo_flutter_sdk_lifecycle_changed',  payload: {state:'${state.name}'} }, '*');");
+    }
   }
 
   Future<void> initConnectivity() async {
@@ -194,6 +203,7 @@ class _MediquoWidgetState extends State<MediquoWidget> {
                                 WebResourceError error
                             ) => _checkRequestError(request.url),
                             onLoadStart: (controller, url) {
+                              webViewController = controller;
                               if (url != null) {
                                 setState(() {
                                   this.url = url.toString();
@@ -213,6 +223,13 @@ class _MediquoWidgetState extends State<MediquoWidget> {
                                   handlerName: 'mediquo_flutter_sdk_close',
                                   callback: (args) {
                                     Navigator.pop(context);
+                                  }
+                              );
+
+                              controller.addJavaScriptHandler(
+                                  handlerName: 'mediquo_flutter_sdk_reload',
+                                  callback: (args) {
+                                    webViewController?.reload();
                                   }
                               );
 
