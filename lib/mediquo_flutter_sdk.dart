@@ -278,6 +278,14 @@ class _MediquoWidgetState extends State<MediquoWidget> with WidgetsBindingObserv
                                   return NavigationActionPolicy.CANCEL;
                                 }
 
+                                if (uri.toString().contains('getFile')) {
+                                  if (!uri.toString().contains('force_download')) {
+                                    var forcedUrl = new WebUri('${uri.toString()}&force_download=1');
+                                    controller.loadUrl(urlRequest: new URLRequest(url: forcedUrl));
+                                    return NavigationActionPolicy.CANCEL;
+                                  }
+                                }
+
                                 return NavigationActionPolicy.ALLOW;
                               }
 
