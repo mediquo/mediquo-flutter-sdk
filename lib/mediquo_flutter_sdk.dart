@@ -132,15 +132,23 @@ class _MediquoWidgetState extends State<MediquoWidget> with WidgetsBindingObserv
     return _connectionStatus[0] == ConnectivityResult.none;
   }
 
-  _checkRequestError(WebUri failedUrl) {
+  Future<void> _checkRequestError(WebUri failedUrl) async {
     if (_isMainPage(failedUrl)) {
       Navigator.pop(context);
       _showConnectionErrorAlertDialog();
     }
 
+    if (_isFileDownload(failedUrl)) {
+      _showConnectionErrorAlertDialog();
+      await webViewController?.clearHistory();
+      return webViewController?.loadUrl(urlRequest: new URLRequest(url: new WebUri(this.url)));
+    }
+
     if (_isInmediateVideocallUrl(failedUrl)) {
       _showConnectionErrorAlertDialog();
     }
+
+    return Future.value(null);
   }
 
   _isMainPage(WebUri failedUrl) {
@@ -149,6 +157,10 @@ class _MediquoWidgetState extends State<MediquoWidget> with WidgetsBindingObserv
 
   _isInmediateVideocallUrl(WebUri failedUrl) {
     return failedUrl.toString().contains('consultations/v1/immediate-videocall');
+  }
+
+  _isFileDownload(WebUri failedUrl) {
+    return failedUrl.toString().contains('mediquo.com') && failedUrl.toString().contains('getFile');
   }
 
   Future<String> _checkWidgetLoading() async {
@@ -196,12 +208,12 @@ class _MediquoWidgetState extends State<MediquoWidget> with WidgetsBindingObserv
                                 InAppWebViewController controller,
                                 WebResourceRequest request,
                                 WebResourceResponse errorResponse
-                            ) => _checkRequestError(request.url),
+                            ) async => await _checkRequestError(request.url),
                             onReceivedError: (
                                 InAppWebViewController controller,
                                 WebResourceRequest request,
                                 WebResourceError error
-                            ) => _checkRequestError(request.url),
+                            ) async => await _checkRequestError(request.url),
                             onLoadStart: (controller, url) {
                               webViewController = controller;
                               if (url != null) {
@@ -276,6 +288,14 @@ class _MediquoWidgetState extends State<MediquoWidget> with WidgetsBindingObserv
                                 if (uri.toString().contains('privacy') | uri.toString().contains('terms')) {
                                   widget.onLoadUrl(uri.toString());
                                   return NavigationActionPolicy.CANCEL;
+                                }
+
+                                if (uri.toString().contains('getFile')) {
+                                  if (!uri.toString().contains('force_download')) {
+                                    var forcedUrl = new WebUri('${uri.toString()}&force_download=1');
+                                    controller.loadUrl(urlRequest: new URLRequest(url: forcedUrl));
+                                    return NavigationActionPolicy.CANCEL;
+                                  }
                                 }
 
                                 return NavigationActionPolicy.ALLOW;
