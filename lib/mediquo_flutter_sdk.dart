@@ -236,7 +236,7 @@ class _MediquoWidgetState extends State<MediquoWidget> with WidgetsBindingObserv
                             },
                             onWebViewCreated: (controller) {
                               controller.addJavaScriptHandler(
-                                  handlerName: 'mediquo_flutter_sdk_ios_download',
+                                  handlerName: 'mediquo_flutter_sdk_download',
                                   callback: (args) {
                                     final url = args[0]['url'];
 
