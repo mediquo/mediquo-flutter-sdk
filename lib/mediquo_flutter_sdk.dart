@@ -87,7 +87,7 @@ class _MediquoWidgetState extends State<MediquoWidget> with WidgetsBindingObserv
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
     if (state == AppLifecycleState.resumed) {
-      await webViewController?.evaluateJavascript(source: "window.parent.postMessage({ command: 'mediquo_flutter_sdk_lifecycle_changed',  payload: {state:'${state.name}'} }, '*');");
+      await webViewController?.evaluateJavascript(source: "window.parent.postMessage({ command: 'mediquo_native_lifecycle_changed',  payload: {state:'${state.name}'} }, '*');");
     }
   }
 
@@ -236,7 +236,7 @@ class _MediquoWidgetState extends State<MediquoWidget> with WidgetsBindingObserv
                             },
                             onWebViewCreated: (controller) {
                               controller.addJavaScriptHandler(
-                                  handlerName: 'mediquo_flutter_sdk_download',
+                                  handlerName: 'mediquo_native_download',
                                   callback: (args) {
                                     final url = args[0]['url'];
 
@@ -247,28 +247,28 @@ class _MediquoWidgetState extends State<MediquoWidget> with WidgetsBindingObserv
                               );
 
                               controller.addJavaScriptHandler(
-                                  handlerName: 'mediquo_flutter_sdk_close',
+                                  handlerName: 'mediquo_native_close',
                                   callback: (args) {
                                     Navigator.pop(context);
                                   }
                               );
 
                               controller.addJavaScriptHandler(
-                                  handlerName: 'mediquo_flutter_sdk_reload',
+                                  handlerName: 'mediquo_native_reload',
                                   callback: (args) {
                                     webViewController?.reload();
                                   }
                               );
 
                               controller.addJavaScriptHandler(
-                                  handlerName: 'mediquo_flutter_sdk_camera_permission',
+                                  handlerName: 'mediquo_native_camera_permission',
                                   callback: (args) async {
                                     await widget.onCameraPermission();
                                   }
                               );
 
                               controller.addJavaScriptHandler(
-                                  handlerName: 'mediquo_flutter_sdk_connection_error_alert',
+                                  handlerName: 'mediquo_native_connection_error_alert',
                                   callback: (args) {
                                     _showConnectionErrorAlertDialog();
                                   }
