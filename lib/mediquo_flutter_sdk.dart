@@ -64,7 +64,7 @@ class _MediquoWidgetState extends State<MediquoWidget> with WidgetsBindingObserv
     initConnectivity();
     WidgetsBinding.instance.addObserver(this);
     _connectivitySubscription = _connectivity.onConnectivityChanged.listen(_updateConnectionStatus);
-    url = 'https://widget.mediquo.com/integration/index.html?api_key=${widget.apiKey}&token=${widget.token}&platform=${_getPlatform()}&environment=${widget.environment.name}';
+    url = 'https://widget.mediquo.com/integration/native.html?api_key=${widget.apiKey}&token=${widget.token}&platform=${_getPlatform()}&environment=${widget.environment.name}';
     super.initState();
   }
 
