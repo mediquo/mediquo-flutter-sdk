@@ -54,6 +54,7 @@ class _MediquoWidgetState extends State<MediquoWidget> with WidgetsBindingObserv
   String title = '';
   bool? isSecure;
   InAppWebViewController? webViewController;
+  bool _isFileChooserOpen = false;
 
   List<ConnectivityResult> _connectionStatus = [ConnectivityResult.none];
   final Connectivity _connectivity = Connectivity();
@@ -86,8 +87,21 @@ class _MediquoWidgetState extends State<MediquoWidget> with WidgetsBindingObserv
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
-    if (state == AppLifecycleState.resumed) {
-      await webViewController?.evaluateJavascript(source: "window.parent.postMessage({ command: 'mediquo_native_lifecycle_changed',  payload: {state:'${state.name}'} }, '*');");
+    if (state == AppLifecycleState.paused) {
+      if (_isFileChooserOpen) return;
+      await webViewController?.evaluateJavascript(
+        source: "window.parent.postMessage({ command: 'mediquo_native_lifecycle_changed', payload: { state: 'paused' } }, '*');"
+      );
+      await webViewController?.pause();
+    } else if (state == AppLifecycleState.resumed) {
+      if (_isFileChooserOpen) {
+        _isFileChooserOpen = false;
+        return;
+      }
+      await webViewController?.resume();
+      await webViewController?.evaluateJavascript(
+        source: "window.parent.postMessage({ command: 'mediquo_native_lifecycle_changed', payload: { state: 'resumed' } }, '*');"
+      );
     }
   }
 
@@ -180,12 +194,6 @@ class _MediquoWidgetState extends State<MediquoWidget> with WidgetsBindingObserv
   _loadWidget() {
     return PopScope(
         canPop: false,
-        /* onPopInvoked: (bool didPop) async {
-          if  (didPop) {
-            return;
-          }
-          return;
-        },*/
         child: new Container(
           color: widget.theme.containerColor,
           child: new SafeArea(
@@ -290,6 +298,10 @@ class _MediquoWidgetState extends State<MediquoWidget> with WidgetsBindingObserv
                                 resources: request.resources,
                                 action: PermissionResponseAction.GRANT
                               );
+                            },
+                            onShowFileChooser: (controller, request) async {
+                              _isFileChooserOpen = true;
+                              return ShowFileChooserResponse(handledByClient: false);
                             },
                             shouldOverrideUrlLoading: (InAppWebViewController controller, NavigationAction navigationAction) async {
 
