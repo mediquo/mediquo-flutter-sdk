@@ -1,22 +1,22 @@
 name: mediquo_flutter_sdk
 description: "MediQuo Flutter SDK"
-version: 0.5.0
+version: 0.5.1
 homepage: "https://mediquo.com"
 
 environment:
-  sdk: ">=3.3.4 <4.0.0"
-  flutter: ">=1.17.0"
+  sdk: ">=3.5.0 <4.0.0"
+  flutter: ">=3.27.0"
 
 dependencies:
   connectivity_plus: ^6.0.3
   flutter:
     sdk: flutter
-  flutter_inappwebview: ^6.0.0
+  flutter_inappwebview: ^6.2.0-beta.3
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^3.0.0
+  flutter_lints: ^4.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
