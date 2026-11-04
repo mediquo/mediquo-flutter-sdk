@@ -31,7 +31,6 @@ class LegitMessage {
 
 const legitBridgeHandler = 'legitHealth';
 
-// The iframe posts to `webkit.messageHandlers.bridge` (iOS) or `legitHealthJsObject` (Android); neither exists in an InAppWebView.
 const legitBridgeScript = '''
 (function () {
   if (window.__mediquoLegitBridge) return;

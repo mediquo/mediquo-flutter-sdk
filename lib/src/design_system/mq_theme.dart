@@ -53,7 +53,6 @@ class MqTheme {
       brand: brand,
       brandStrong: strong,
       brandSubtle: Color.lerp(brand, MqColors.grey50, 0.9)!,
-      // shortcut: a very light brand may still fail AA as text even darkened; pick per-brand tokens if one shows up.
       textBrand: light ? strong : brand,
       textOnBrand: light ? MqColors.grey950 : MqColors.grey50,
     );
@@ -149,7 +148,6 @@ TextTheme _withoutTracking(TextTheme t) {
   );
 }
 
-/// An [InheritedTheme] so sheets and dialogs, pushed on the root navigator, keep the brand.
 class _MqThemeScope extends InheritedTheme {
   final MqTheme theme;
 

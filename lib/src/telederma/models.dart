@@ -6,8 +6,6 @@ enum CaseStatus {
 
   final String label;
   const CaseStatus(this.label);
-
-  // shortcut: reviewed/closed arrive with MQB-18444 and show as submitted until they are added here.
   static CaseStatus fromJson(String value) => values.firstWhere((s) => s.name == value, orElse: () => submitted);
 }
 

@@ -46,7 +46,6 @@ class ApiChatTeledermaClient implements TeledermaRepository {
   @override
   Future<Uri> createIframeSession(String caseId) async {
     final json = await _api.send('POST', '${_case(caseId)}/iframe-sessions');
-    // The contract documents a bare `{url}`; every other endpoint wraps its body in `data`.
     return Uri.parse((json['data'] ?? json)['url'] as String);
   }
 
