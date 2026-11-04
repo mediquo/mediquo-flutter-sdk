@@ -1,5 +1,7 @@
 library mediquo_flutter_sdk;
 
+export 'src/telederma/telederma.dart';
+
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';

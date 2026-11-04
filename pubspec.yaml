@@ -12,6 +12,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_inappwebview: ^6.2.0-beta.3
+  http: ^1.2.2
 
 dev_dependencies:
   flutter_test:
@@ -23,6 +24,8 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
+  assets:
+    - assets/telederma/
 
   # To add assets to your package, add an assets section, like this:
   # assets:

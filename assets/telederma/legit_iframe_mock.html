@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>Simulador iframe telederma</title>
+  <!--
+    Local stand-in for https://iframe.legit.health used while there are no
+    Legit.Health credentials. It talks to the host with the same transports
+    and message envelope as the real iframe ({ message, id, payload } as a
+    JSON string). Report ids encode the demo choices so the mock repository
+    returns a matching report.
+  -->
+  <style>
+    /* @mediquo/ui tokens: brand.default, text.primary, text.secondary, border.default */
+    :root { --primary: #6500CC; --primary-subtle: #F5E5FF; --text: #0A0A23; --muted: #9B91AE; --line: #EDECF1; }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { margin: 0; font-family: -apple-system, Roboto, "Helvetica Neue", sans-serif; color: var(--text); background: #fff; }
+    main { padding: 20px 16px 120px; }
+    h1 { font-size: 22px; margin: 0 0 6px; }
+    p.sub { color: var(--muted); margin: 0 0 20px; font-size: 14px; }
+    h2 { font-size: 15px; margin: 22px 0 10px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip { border: 1px solid var(--line); background: #fff; border-radius: 10px; padding: 10px 14px; font-size: 14px; }
+    .chip.on { border-color: var(--primary); background: var(--primary-subtle); color: var(--primary); font-weight: 500; }
+    .photos { display: flex; gap: 10px; flex-wrap: wrap; }
+    .photo { width: 88px; height: 88px; border-radius: 12px; object-fit: cover; background: #e8c9ad; }
+    .btn { display: block; width: 100%; height: 44px; padding: 0 16px; border-radius: 6px; font-size: 14px; font-weight: 500; border: 1px solid var(--line); background: #fff; color: var(--primary); margin-top: 10px; }
+    .btn.primary { background: var(--primary); color: #fff; border: none; }
+    .btn:disabled { opacity: .4; }
+    .link { background: none; border: none; color: var(--muted); font-size: 13px; text-decoration: underline; margin-top: 14px; }
+    footer { position: fixed; left: 0; right: 0; bottom: 0; padding: 12px 16px 24px; background: #fff; border-top: 1px solid var(--line); }
+    .center { text-align: center; padding-top: 30vh; }
+    .spinner { width: 48px; height: 48px; border: 5px solid var(--line); border-top-color: var(--primary); border-radius: 50%; margin: 0 auto 20px; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    input[type=file] { display: none; }
+  </style>
+</head>
+<body>
+  <main id="form">
+    <h1>Nuevo caso dermatológico</h1>
+
+    <h2>¿Qué quieres consultar?</h2>
+    <div class="chips" data-group="kind">
+      <button class="chip on" data-value="lesion">Lesión nueva</button>
+      <button class="chip" data-value="followup">Seguimiento</button>
+    </div>
+
+    <div id="lesion-block">
+      <h2>¿Cómo es la lesión?</h2>
+      <div class="chips" data-group="lesion">
+        <button class="chip" data-value="pigmented">Lunar o mancha oscura</button>
+        <button class="chip" data-value="rash">Erupción o eccema</button>
+        <button class="chip" data-value="pimples">Granos</button>
+        <button class="chip" data-value="hives">Ronchas</button>
+        <button class="chip" data-value="other">Otra</button>
+      </div>
+      <h2>¿Ha cambiado de forma o color?</h2>
+      <div class="chips" data-group="evolution">
+        <button class="chip on" data-value="stable">No</button>
+        <button class="chip" data-value="changed">Sí</button>
+      </div>
+    </div>
+
+    <div id="followup-block" hidden>
+      <h2>Diagnóstico previo</h2>
+      <div class="chips" data-group="followup">
+        <button class="chip" data-value="psoriasis">Psoriasis</button>
+        <button class="chip" data-value="atopicDermatitis">Dermatitis atópica</button>
+        <button class="chip" data-value="acne">Acné</button>
+      </div>
+    </div>
+
+    <h2>Zona del cuerpo</h2>
+    <div class="chips" data-group="site">
+      <button class="chip" data-value="face">Cara</button>
+      <button class="chip" data-value="neck">Cuello</button>
+      <button class="chip" data-value="chest">Pecho</button>
+      <button class="chip" data-value="back">Espalda</button>
+      <button class="chip" data-value="arm">Brazo</button>
+      <button class="chip" data-value="hand">Mano</button>
+      <button class="chip" data-value="leg">Pierna</button>
+      <button class="chip" data-value="foot">Pie</button>
+    </div>
+
+    <h2>Fotos</h2>
+    <div class="photos" id="photos"></div>
+    <label class="btn" for="file" style="text-align:center">Hacer o elegir foto</label>
+    <input id="file" type="file" accept="image/*" capture="environment">
+    <button class="btn" id="sample">Usar foto de ejemplo</button>
+    <button class="link" id="reject">Simular foto rechazada (image_rejected)</button>
+  </main>
+
+  <div id="analyzing" class="center" hidden>
+    <div class="spinner"></div>
+    <div>Analizando imágenes…</div>
+  </div>
+
+  <footer id="footer"><button class="btn primary" id="submit" disabled>Analizar</button></footer>
+
+  <script>
+    const state = { kind: 'lesion', lesion: null, evolution: 'stable', followup: null, site: null, photos: 0 };
+
+    // Same transports the real iframe uses: iOS webkit handler "bridge",
+    // Android injected "legitHealthJsObject", web window.postMessage.
+    function send(message) {
+      const json = JSON.stringify(message);
+      const handlers = window.webkit && window.webkit.messageHandlers;
+      if (handlers && handlers.bridge) return handlers.bridge.postMessage(json);
+      if (window.legitHealthJsObject) return window.legitHealthJsObject.postMessage(json);
+      window.parent.postMessage(message, '*');
+    }
+
+    function refresh() {
+      document.getElementById('lesion-block').hidden = state.kind !== 'lesion';
+      document.getElementById('followup-block').hidden = state.kind !== 'followup';
+      const choice = state.kind === 'lesion' ? state.lesion : state.followup;
+      document.getElementById('submit').disabled = !(choice && state.site && state.photos > 0);
+    }
+
+    document.querySelectorAll('.chips').forEach(group => {
+      group.addEventListener('click', e => {
+        const chip = e.target.closest('.chip');
+        if (!chip) return;
+        group.querySelectorAll('.chip').forEach(c => c.classList.toggle('on', c === chip));
+        state[group.dataset.group] = chip.dataset.value;
+        refresh();
+      });
+    });
+
+    function addPhoto(src) {
+      const img = document.createElement('img');
+      img.className = 'photo';
+      if (src) img.src = src;
+      document.getElementById('photos').appendChild(img);
+      state.photos++;
+      refresh();
+    }
+
+    document.getElementById('file').addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (file) addPhoto(URL.createObjectURL(file));
+      e.target.value = '';
+    });
+    document.getElementById('sample').addEventListener('click', () => addPhoto(null));
+    document.getElementById('reject').addEventListener('click', () => {
+      send({ message: 'image_rejected', id: 'mock-image', payload: ['Imagen desenfocada', 'Poca luz'] });
+    });
+
+    document.getElementById('submit').addEventListener('click', () => {
+      document.getElementById('form').hidden = true;
+      document.getElementById('footer').hidden = true;
+      document.getElementById('analyzing').hidden = false;
+      const value = state.kind === 'lesion' ? state.lesion : state.followup;
+      const id = ['mock', state.kind, value, state.site, state.evolution, Date.now()].join('_');
+      setTimeout(() => send({ message: 'analysis_completed', id: id }), 2500);
+    });
+  </script>
+</body>
+</html>
