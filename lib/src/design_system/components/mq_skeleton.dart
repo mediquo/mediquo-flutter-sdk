@@ -3,7 +3,6 @@ import 'package:flutter/widgets.dart';
 import '../mq_theme.dart';
 import '../tokens.dart';
 
-/// `mq-skeleton`: a placeholder block that pulses while content loads.
 class MqSkeleton extends StatefulWidget {
   final double? width;
   final double height;

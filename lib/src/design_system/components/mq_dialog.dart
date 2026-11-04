@@ -5,8 +5,6 @@ import '../mq_theme.dart';
 import '../tokens.dart';
 import 'mq_button.dart';
 
-/// Confirmation dialog: the system alert on iOS, an `mq-dialog` elsewhere.
-/// Resolves true when the patient confirms.
 Future<bool> showMqConfirm(
   BuildContext context, {
   required String title,

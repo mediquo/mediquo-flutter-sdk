@@ -6,7 +6,6 @@ const _months = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 
 
 String formatDate(DateTime d) => '${d.day} ${_months[d.month - 1]} ${d.year}';
 
-/// [p] on the 0-100 scale Legit.Health uses.
 String formatPercent(double p) => '${p.round()} %';
 
 TextStyle secondaryText(BuildContext context, {double fontSize = 14}) =>

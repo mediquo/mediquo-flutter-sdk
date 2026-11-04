@@ -3,7 +3,6 @@ import 'package:flutter/cupertino.dart';
 import '../mq_theme.dart';
 import '../tokens.dart';
 
-/// `mq-textarea`, on [CupertinoTextField] for native editing and selection.
 class MqTextarea extends StatefulWidget {
   final TextEditingController controller;
   final String? label;
@@ -59,7 +58,6 @@ class _MqTextareaState extends State<MqTextarea> {
       decoration: BoxDecoration(
         color: t.background,
         borderRadius: BorderRadius.circular(MqRadius.md),
-        // Border plus ring on focus, as on web: a 1px colour change alone is too faint.
         border: Border.all(color: focused ? t.brand : t.borderDefault, width: focused ? 2 : 1),
       ),
     );

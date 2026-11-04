@@ -5,7 +5,6 @@ import '../tokens.dart';
 
 enum MqBadgeTone { neutral, error }
 
-/// `mq-badge`: neutral by default, error for what needs attention.
 class MqBadge extends StatelessWidget {
   final String label;
   final MqBadgeTone tone;

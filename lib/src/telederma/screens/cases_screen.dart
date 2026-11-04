@@ -11,7 +11,6 @@ import 'legit_iframe_screen.dart';
 class MediquoTeledermaCases extends StatefulWidget {
   final TeledermaRepository repository;
 
-  /// Overrides the theme built from the organization's `primary_color`.
   final MqTheme? theme;
   final Future<void> Function()? onCameraPermission;
 
@@ -107,7 +106,6 @@ class _MediquoTeledermaCasesState extends State<MediquoTeledermaCases> {
         final error = snapshot.error;
         final forbidden = error is ApiChatException && error.statusCode == 403;
         final loading = snapshot.connectionState != ConnectionState.done || !_branded;
-        // A draft is a case whose zone was never sent: the patient only sees sent cases.
         final cases = [
           for (final c in snapshot.data ?? const <TeledermaCase>[])
             if (c.status != CaseStatus.draft) c
@@ -303,7 +301,6 @@ class _Skeleton extends StatelessWidget {
   }
 }
 
-/// Centred in the screen like iOS' `ContentUnavailableView`; scrollable so pull-to-refresh still works.
 class _EmptyState extends StatelessWidget {
   final IconData icon;
   final String title;

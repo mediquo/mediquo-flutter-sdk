@@ -3,7 +3,6 @@ import 'package:flutter/widgets.dart';
 import '../mq_theme.dart';
 import '../tokens.dart';
 
-/// Card of sdk-web elements: subtle border, 12px radius, 16px title.
 class MqCard extends StatelessWidget {
   final String? title;
   final Widget child;

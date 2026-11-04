@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 
 import 'tokens.dart';
 
-/// Semantic tokens of `@mediquo/ui` (light mode). A white-label brand
-/// overrides the brand ones, like a `Theme` does on web.
 @immutable
 class MqTheme {
   final Color brand;
@@ -26,7 +24,6 @@ class MqTheme {
   final Color errorSubtle;
   final Color errorStrong;
 
-  /// Null keeps the platform font (Inter / Scoop are not bundled).
   final String? fontFamily;
 
   const MqTheme({
@@ -49,8 +46,6 @@ class MqTheme {
     this.fontFamily,
   });
 
-  /// The brand tokens of an organization's primary colour, mixed in sRGB like `color-mix` on web.
-  /// The default purple700 gives ≈ purple800 (strong) and ≈ purple50 (subtle).
   factory MqTheme.fromBrand(Color brand) {
     final strong = Color.lerp(brand, const Color(0xFF000000), 0.25)!;
     final light = ThemeData.estimateBrightnessForColor(brand) == Brightness.light;
@@ -67,8 +62,6 @@ class MqTheme {
   static MqTheme of(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<_MqThemeScope>()?.theme ?? const MqTheme();
 
-  /// Applies the tokens to [child] whatever the host app's theme is. The
-  /// Material theme is only infrastructure: no ripples, tints or elevation.
   Widget wrap(Widget child) => _MqThemeScope(
         theme: this,
         child: Builder(builder: (context) => Theme(data: _themeData(Theme.of(context)), child: child)),
@@ -135,7 +128,6 @@ class MqTheme {
   }
 }
 
-/// Material 3 adds letter spacing that makes text wider than native text.
 TextTheme _withoutTracking(TextTheme t) {
   TextStyle? f(TextStyle? s) => s?.copyWith(letterSpacing: 0);
   return t.copyWith(

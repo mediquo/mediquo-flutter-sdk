@@ -87,7 +87,6 @@ class _CaseBody extends StatelessWidget {
   }
 }
 
-/// Same layout as [_CaseBody]: title, status, notice and one zone.
 class _CaseSkeleton extends StatelessWidget {
   const _CaseSkeleton();
 

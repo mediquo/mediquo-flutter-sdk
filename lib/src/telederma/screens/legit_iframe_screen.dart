@@ -28,7 +28,6 @@ class _LegitIframeScreenState extends State<LegitIframeScreen> {
   bool _pageLoading = true;
   int _attempt = 0;
 
-  /// Retry re-sends this report (idempotent) and the case instead of restarting the iframe.
   String? _completedReportId;
 
   @override
@@ -133,7 +132,6 @@ class _LegitIframeScreenState extends State<LegitIframeScreen> {
         controller.addJavaScriptHandler(
           handlerName: legitBridgeHandler,
           callback: (args) async {
-            // The handler is reachable from any page the WebView navigates to.
             if (!LegitIframe.isTrustedOrigin(await controller.getUrl())) return;
             final message = args.isEmpty ? null : LegitMessage.parse(args.first);
             if (message != null && mounted) _onMessage(message);
@@ -147,7 +145,6 @@ class _LegitIframeScreenState extends State<LegitIframeScreen> {
         if (request.isForMainFrame ?? true) _fail('No se ha podido cargar el servicio. Revisa tu conexión.');
       },
       onPermissionRequest: (_, request) async {
-        // The iframe only needs the camera; anything else (mic, location) is denied.
         final wantsCamera =
             request.resources.contains(PermissionResourceType.CAMERA) && LegitIframe.isTrustedOrigin(request.origin);
         if (!wantsCamera) return PermissionResponse(action: PermissionResponseAction.DENY);
@@ -205,7 +202,6 @@ class _ErrorView extends StatelessWidget {
   }
 }
 
-/// Adds the zone and submits the case. Resolves with the zone, or null if the patient closed the iframe.
 Future<CaseReport?> openLegitIframe(
   BuildContext context, {
   required TeledermaRepository repository,

@@ -5,15 +5,12 @@ import '../legit/legit_iframe.dart';
 import '../models.dart';
 import 'telederma_repository.dart';
 
-/// In-memory backend. Its iframe is the bundled simulator, whose report ids
-/// encode the demo choices: `mock_<lesion|followup>_<value>_<bodySite>_<changed|stable>_<ts>`.
 class MockTeledermaRepository implements TeledermaRepository {
   MockTeledermaRepository({this.latency = const Duration(milliseconds: 600), this.withAnalysis = false})
       : _cases = _seed(withAnalysis);
 
   final Duration latency;
 
-  /// Fakes `enableResult`.
   final bool withAnalysis;
   final List<TeledermaCase> _cases;
 
@@ -145,7 +142,6 @@ class MockTeledermaRepository implements TeledermaRepository {
     ];
   }
 
-  /// Legit names the zones in the iframe's locale (es).
   static const _bodySites = {
     'face': 'Cabeza y cuello',
     'neck': 'Cabeza y cuello',

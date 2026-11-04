@@ -4,15 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <title>Simulador iframe telederma</title>
-  <!--
-    Local stand-in for https://iframe.legit.health used while there are no
-    Legit.Health credentials. It talks to the host with the same transports
-    and message envelope as the real iframe ({ message, id, payload } as a
-    JSON string). Report ids encode the demo choices so the mock repository
-    returns a matching report.
-  -->
   <style>
-    /* @mediquo/ui tokens: brand.default, text.primary, text.secondary, border.default */
     :root { --primary: #6500CC; --primary-subtle: #F5E5FF; --text: #0A0A23; --muted: #9B91AE; --line: #EDECF1; }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     body { margin: 0; font-family: -apple-system, Roboto, "Helvetica Neue", sans-serif; color: var(--text); background: #fff; }
@@ -101,8 +93,6 @@
   <script>
     const state = { kind: 'lesion', lesion: null, evolution: 'stable', followup: null, site: null, photos: 0 };
 
-    // Same transports the real iframe uses: iOS webkit handler "bridge",
-    // Android injected "legitHealthJsObject", web window.postMessage.
     function send(message) {
       const json = JSON.stringify(message);
       const handlers = window.webkit && window.webkit.messageHandlers;

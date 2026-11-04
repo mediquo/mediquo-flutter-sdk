@@ -12,9 +12,6 @@ class ApiChatException implements Exception {
   String toString() => 'ApiChatException($statusCode): $message';
 }
 
-/// api-chat transport, like `MediquoApiChatClient` in sdk-web core: one
-/// instance per patient. The host's [token] is exchanged for a session with
-/// `POST /login/v1/token` on the first request and again when the session expires.
 class ApiChatClient {
   ApiChatClient({
     required this.apiKey,

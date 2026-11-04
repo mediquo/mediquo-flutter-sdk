@@ -1,7 +1,3 @@
-/// Telederma model, mirroring api-chat `/imq/telederma/v1/cases`.
-///
-/// Probabilities and scores stay on Legit.Health's 0-100 scale and its texts
-/// (body site, hypotheses, severity) arrive in English.
 library;
 
 enum CaseStatus {
@@ -18,10 +14,8 @@ enum CaseStatus {
 class CasePhoto {
   final String type;
 
-  /// Signed URL that expires after 15 minutes: never cache it, fetch the case again.
   final String url;
 
-  /// DIQA image quality, 0-100. Null for macroscopic photos.
   final int? qualityScore;
 
   const CasePhoto({required this.type, required this.url, this.qualityScore});
@@ -95,7 +89,6 @@ class Severity {
       );
 }
 
-/// Legit.Health's AI result. Only sent when the patient may see it (`enableResult`).
 class Analysis {
   final List<Hypothesis> hypotheses;
   final Risk? risk;
@@ -110,13 +103,11 @@ class Analysis {
       );
 }
 
-/// One body zone of a case: one pass through the Legit.Health iframe.
 class CaseReport {
   final String id;
 
   final String bodySite;
 
-  /// Empty in the list and while the photos are still being copied.
   final List<CasePhoto> photos;
   final Analysis? analysis;
 
@@ -135,10 +126,8 @@ class TeledermaCase {
   final CaseStatus status;
   final String? consultationReason;
 
-  /// Missing in the create and submit responses.
   final DateTime? createdAt;
 
-  /// First lesion photo, only in the list. Signed for 15 minutes.
   final String? thumbnailUrl;
   final List<CaseReport> reports;
 
@@ -151,7 +140,6 @@ class TeledermaCase {
     this.reports = const [],
   });
 
-  /// The body zone: a case has one, and the consultation reason is free text too long for a title.
   String get title {
     final site = reports.firstOrNull?.bodySite ?? '';
     return site.isEmpty ? 'Consulta dermatológica' : site;

@@ -5,8 +5,6 @@ import '../tokens.dart';
 
 enum MqButtonVariant { primary, secondary, outline, ghost, negative }
 
-/// `mq-button`. Built on [CupertinoButton] for the native press feedback
-/// (opacity, no ripple) on every platform.
 class MqButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;

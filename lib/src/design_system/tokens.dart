@@ -1,6 +1,5 @@
 import 'package:flutter/widgets.dart';
 
-/// Primitive tokens of `@mediquo/ui` (sdk-web/packages/ui/src/tokens). Keep in sync with `tokens.css`.
 abstract final class MqColors {
   static const purple50 = Color(0xFFF5E5FF);
   static const purple700 = Color(0xFF6500CC);
@@ -13,7 +12,6 @@ abstract final class MqColors {
   static const grey400 = Color(0xFFB2ABC4);
   static const grey950 = Color(0xFF0A0A23);
 
-  /// sdk-web elements' secondary text: darker than grey500 so 14px text keeps AA contrast.
   static const textIconsSecondary = Color(0xFF6D658B);
 
   static const red50 = Color(0xFFFED5E1);
@@ -29,7 +27,6 @@ abstract final class MqRadius {
   static const full = 9999.0;
 }
 
-/// `size.control`: heights of buttons and inputs.
 abstract final class MqControlSize {
   static const sm = 32.0;
   static const md = 40.0;
