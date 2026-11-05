@@ -5,11 +5,15 @@ import '../models.dart';
 abstract class TeledermaRepository {
   Future<Color?> primaryColor();
 
+  Future<LegalConsent> legalConsent();
+
+  Future<void> acceptLegalConsent(LegalConsent consent);
+
   Future<List<TeledermaCase>> listCases();
 
   Future<TeledermaCase> getCase(String caseId);
 
-  Future<TeledermaCase> createCase({String? consultationReason});
+  Future<TeledermaCase> createCase();
 
   Future<void> discardCase(String caseId);
 

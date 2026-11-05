@@ -23,25 +23,30 @@ class ApiChatClient {
   final String token;
   static const _baseUrl = 'https://chat.mediquo.com';
   final http.Client _http;
-  Future<String>? _session;
+  Future<Map<String, dynamic>>? _session;
+
+  Future<Map<String, dynamic>> patient() async => (await (_session ??= _login()))['patient'] as Map<String, dynamic>;
 
   Future<dynamic> send(String method, String path, {Object? body}) async {
-    var response = await _request(method, path, body, await (_session ??= _login()));
+    var response = await _request(method, path, body, await _accessToken(_session ??= _login()));
     if (response.statusCode == 401) {
       _session = _login();
-      response = await _request(method, path, body, await _session!);
+      response = await _request(method, path, body, await _accessToken(_session!));
     }
     return _decode(response);
   }
 
-  Future<String> _login() async {
+  static Future<String> _accessToken(Future<Map<String, dynamic>> session) async =>
+      (await session)['access_token'] as String;
+
+  Future<Map<String, dynamic>> _login() async {
     try {
       final response = await _http.post(
         Uri.parse('$_baseUrl/login/v1/token'),
         headers: _headers(),
         body: jsonEncode({'token': token}),
       );
-      return _decode(response)['access_token'] as String;
+      return _decode(response) as Map<String, dynamic>;
     } catch (_) {
       _session = null;
       rethrow;

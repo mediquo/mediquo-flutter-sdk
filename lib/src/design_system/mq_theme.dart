@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
+import 'components/mq_icon.dart';
 import 'tokens.dart';
 
 @immutable
@@ -12,6 +13,7 @@ class MqTheme {
 
   final Color background;
   final Color surfaceRaised;
+  final Color surfaceStrong;
   final Color textPrimary;
   final Color textSecondary;
   final Color textDisabled;
@@ -19,6 +21,9 @@ class MqTheme {
   final Color textOnBrand;
   final Color borderDefault;
   final Color borderStrong;
+
+  final Color successSubtle;
+  final Color successStrong;
 
   final Color error;
   final Color errorSubtle;
@@ -33,6 +38,7 @@ class MqTheme {
     this.textBrand = MqColors.purple700,
     this.background = MqColors.grey50,
     this.surfaceRaised = MqColors.grey100,
+    this.surfaceStrong = MqColors.grey200,
     this.textPrimary = MqColors.grey950,
     this.textSecondary = MqColors.textIconsSecondary,
     this.textDisabled = MqColors.grey400,
@@ -40,6 +46,8 @@ class MqTheme {
     this.textOnBrand = MqColors.grey50,
     this.borderDefault = MqColors.grey200,
     this.borderStrong = MqColors.grey300,
+    this.successSubtle = MqColors.green50,
+    this.successStrong = MqColors.green700,
     this.error = MqColors.red500,
     this.errorSubtle = MqColors.red50,
     this.errorStrong = MqColors.red700,
@@ -88,6 +96,7 @@ class MqTheme {
       hoverColor: surfaceRaised,
       dividerColor: borderDefault,
       cupertinoOverrideTheme: CupertinoThemeData(primaryColor: brand),
+      actionIconTheme: ActionIconThemeData(backButtonIconBuilder: (_) => const MqIcon(MqIcons.arrowLeft)),
       textSelectionTheme: TextSelectionThemeData(
         cursorColor: brand,
         selectionColor: brandSubtle,
@@ -99,12 +108,13 @@ class MqTheme {
         elevation: 0,
         scrolledUnderElevation: 0,
         surfaceTintColor: Colors.transparent,
-        centerTitle: true,
+        centerTitle: false,
+        titleSpacing: 4,
         shape: Border(bottom: BorderSide(color: borderDefault)),
         titleTextStyle: TextStyle(
           fontFamily: fontFamily,
           fontSize: MqFontSize.base,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w500,
           color: textPrimary,
         ),
       ),

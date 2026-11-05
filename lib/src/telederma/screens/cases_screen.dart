@@ -1,22 +1,27 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../api_client/api_chat_client.dart';
+import '../../design_system/design_system.dart';
 import '../data/telederma_repository.dart';
 import '../models.dart';
-import '../../design_system/design_system.dart';
 import '../widgets/common.dart';
 import 'case_detail_screen.dart';
 import 'legit_iframe_screen.dart';
+import 'service_info_screen.dart';
+import 'terms_screen.dart';
 
 class MediquoTeledermaCases extends StatefulWidget {
   final TeledermaRepository repository;
-
+  final void Function(String url) onLoadUrl;
   final MqTheme? theme;
   final Future<void> Function()? onCameraPermission;
 
   const MediquoTeledermaCases({
     super.key,
     required this.repository,
+    required this.onLoadUrl,
     this.theme,
     this.onCameraPermission,
   });
@@ -27,7 +32,10 @@ class MediquoTeledermaCases extends StatefulWidget {
 
 class _MediquoTeledermaCasesState extends State<MediquoTeledermaCases> {
   late Future<List<TeledermaCase>> _cases;
-  bool _creating = false;
+  Timer? _mediaPoll;
+  int _mediaPolls = 0;
+  bool _starting = false;
+  bool _consentAccepted = false;
   MqTheme? _brand;
 
   MqTheme get _theme => widget.theme ?? _brand ?? const MqTheme();
@@ -36,8 +44,28 @@ class _MediquoTeledermaCasesState extends State<MediquoTeledermaCases> {
   @override
   void initState() {
     super.initState();
-    _cases = widget.repository.listCases();
+    _cases = _load();
     if (widget.theme == null) _loadBrand();
+  }
+
+  @override
+  void dispose() {
+    _mediaPoll?.cancel();
+    super.dispose();
+  }
+
+  Future<List<TeledermaCase>> _load() async {
+    final cases = await widget.repository.listCases();
+    _mediaPoll?.cancel();
+    if (cases.any((c) => c.mediaPending) && _mediaPolls++ < 20) {
+      _mediaPoll = Timer(const Duration(seconds: 3), () {
+        if (!mounted) return;
+        setState(() {
+          _cases = _load();
+        });
+      });
+    }
+    return cases;
   }
 
   Future<void> _loadBrand() async {
@@ -46,55 +74,56 @@ class _MediquoTeledermaCasesState extends State<MediquoTeledermaCases> {
   }
 
   void _reload() {
+    _mediaPolls = 0;
     setState(() {
-      _cases = widget.repository.listCases();
+      _cases = _load();
     });
   }
 
-  Future<void> _startNewCase(BuildContext context) async {
-    final reason = await showModalBottomSheet<String>(
-      context: context,
-      isScrollControlled: true,
-      builder: (_) => const _NewCaseSheet(),
-    );
-    if (reason == null || !mounted) return;
-    setState(() => _creating = true);
-    try {
-      final created = await widget.repository.createCase(consultationReason: reason);
-      if (!context.mounted) return;
-      final report = await openLegitIframe(
-        context,
-        repository: widget.repository,
-        caseId: created.id,
-        theme: _theme,
-        onCameraPermission: widget.onCameraPermission,
+  Future<T?> _push<T>(Widget page, {bool fullscreenDialog = false}) => Navigator.of(context).push<T>(
+        MaterialPageRoute(fullscreenDialog: fullscreenDialog, builder: (_) => _theme.wrap(page)),
       );
-      if (!mounted) return;
-      if (report == null) {
-        widget.repository.discardCase(created.id).ignore();
-        _reload();
-      } else {
-        await _openCase(created);
+
+  Future<void> _startConsultation() async {
+    setState(() => _starting = true);
+    try {
+      if (!_consentAccepted) {
+        final consent = await widget.repository.legalConsent();
+        _consentAccepted = consent.status == LegalConsentStatus.accepted ||
+            await _push<bool>(TermsScreen(
+                  repository: widget.repository,
+                  consent: consent,
+                  onLoadUrl: widget.onLoadUrl,
+                )) ==
+                true;
+        if (!_consentAccepted) return;
       }
+      final created = await widget.repository.createCase();
+      final sent = await _push<bool>(
+        LegitIframeScreen(
+          repository: widget.repository,
+          caseId: created.id,
+          onCameraPermission: widget.onCameraPermission,
+        ),
+        fullscreenDialog: true,
+      );
+      if (sent != true) widget.repository.discardCase(created.id).ignore();
+      if (mounted) _reload();
     } catch (e) {
-      if (!context.mounted) return;
+      if (!mounted) return;
       final forbidden = e is ApiChatException && e.statusCode == 403;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(forbidden
             ? 'El servicio de dermatología no está disponible para tu cuenta.'
-            : 'No se ha podido crear el caso. Inténtalo de nuevo.'),
+            : 'No se ha podido iniciar la consulta. Inténtalo de nuevo.'),
       ));
     } finally {
-      if (mounted) setState(() => _creating = false);
+      if (mounted) setState(() => _starting = false);
     }
   }
 
   Future<void> _openCase(TeledermaCase c) async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => _theme.wrap(CaseDetailScreen(repository: widget.repository, caseId: c.id)),
-      ),
-    );
+    await _push(CaseDetailScreen(repository: widget.repository, caseId: c.id, onLoadUrl: widget.onLoadUrl));
     if (mounted) _reload();
   }
 
@@ -105,25 +134,35 @@ class _MediquoTeledermaCasesState extends State<MediquoTeledermaCases> {
       builder: (context, snapshot) {
         final error = snapshot.error;
         final forbidden = error is ApiChatException && error.statusCode == 403;
-        final loading = snapshot.connectionState != ConnectionState.done || !_branded;
+        final loading = (snapshot.connectionState != ConnectionState.done && !snapshot.hasData) || !_branded;
         final cases = [
           for (final c in snapshot.data ?? const <TeledermaCase>[])
             if (c.status != CaseStatus.draft) c
         ];
         return Scaffold(
-          appBar: AppBar(title: const Text('Dermatología')),
+          appBar: AppBar(
+            title: const Text('Dermatología'),
+            actions: [
+              if (error == null)
+                IconButton(
+                  icon: const MqIcon(MqIcons.infoCircle),
+                  tooltip: 'Más información',
+                  onPressed: () => _push(ServiceInfoScreen(repository: widget.repository, onLoadUrl: widget.onLoadUrl)),
+                ),
+            ],
+          ),
           floatingActionButtonAnimator: FloatingActionButtonAnimator.noAnimation,
           floatingActionButton: error != null || loading || cases.isEmpty
               ? null
               : DecoratedBox(
                   decoration: const BoxDecoration(
                     borderRadius: BorderRadius.all(Radius.circular(MqRadius.md)),
-                    boxShadow: [BoxShadow(color: Color(0x1F0A0A23), blurRadius: 16, offset: Offset(0, 4))],
+                    boxShadow: [BoxShadow(color: Color(0x2E0A0A21), blurRadius: 6, offset: Offset(0, 4))],
                   ),
                   child: MqButton(
-                    label: 'Nuevo caso',
-                    icon: Icons.add,
-                    onPressed: _creating ? null : () => _startNewCase(context),
+                    label: 'Nueva consulta',
+                    icon: MqIcons.plus,
+                    onPressed: _starting ? null : _startConsultation,
                   ),
                 ),
           body: _body(context, loading: loading, forbidden: forbidden, error: error != null, cases: cases),
@@ -140,32 +179,49 @@ class _MediquoTeledermaCasesState extends State<MediquoTeledermaCases> {
     required List<TeledermaCase> cases,
   }) {
     if (forbidden) {
-      return const _EmptyState(
-        icon: Icons.lock_outline,
-        title: 'Servicio no disponible',
-        description: 'El servicio de dermatología no está incluido en tu cuenta.',
+      return const _Centered(
+        child: ScreenHero(
+          icon: MqIcons.lock,
+          title: 'Servicio no disponible',
+          description: 'El servicio de dermatología no está incluido en tu cuenta.',
+        ),
       );
     }
     if (error) {
-      return _EmptyState(
-        icon: Icons.cloud_off_outlined,
-        title: 'No se han podido cargar tus casos',
-        description: 'Revisa tu conexión e inténtalo de nuevo.',
-        action: MqButton(label: 'Reintentar', variant: MqButtonVariant.outline, onPressed: _reload),
+      return ListView(
+        padding: const EdgeInsets.all(24),
+        children: [
+          const MqBanner(
+            icon: MqIcons.alertCircle,
+            tone: MqTone.error,
+            title: 'No hemos podido cargar tus consultas',
+            description: 'Revisa tu conexión e inténtalo de nuevo.',
+          ),
+          const SizedBox(height: 16),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: MqButton(label: 'Reintentar', variant: MqButtonVariant.secondary, onPressed: _reload),
+          ),
+        ],
       );
     }
     if (!loading && cases.isEmpty) {
       return RefreshIndicator.adaptive(
         onRefresh: () async => _reload(),
-        child: _EmptyState(
-          icon: Icons.photo_camera_outlined,
-          title: 'Aún no tienes casos',
-          description: 'Haz fotos de la zona de la piel que te preocupa y un dermatólogo te responderá '
-              'por el chat en menos de 48 h.',
-          action: MqButton(
-            label: 'Nuevo caso',
-            icon: Icons.add,
-            onPressed: _creating ? null : () => _startNewCase(context),
+        child: _Centered(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const ScreenHero(
+                icon: MqIcons.heartRate,
+                title: 'Tu consulta de dermatología',
+                description:
+                    'Envía fotos de la zona afectada y un dermatólogo te responderá en menos de 48 horas laborables.',
+              ),
+              const SizedBox(height: 32),
+              MqButton(label: 'Nueva consulta', expand: true, onPressed: _starting ? null : _startConsultation),
+            ],
           ),
         ),
       );
@@ -173,172 +229,99 @@ class _MediquoTeledermaCasesState extends State<MediquoTeledermaCases> {
     return RefreshIndicator.adaptive(
       onRefresh: () async => _reload(),
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 96),
         children: [
-          const Text(
-            'Tus casos',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 4),
-          Text('Fotos de tu piel revisadas por dermatólogos', style: secondaryText(context)),
-          const SizedBox(height: 16),
+          const Text('Tus consultas', style: headingStyle),
+          const SizedBox(height: 12),
           if (loading)
-            const _Skeleton()
+            for (var i = 0; i < 3; i++)
+              const Padding(
+                padding: EdgeInsets.only(bottom: 12),
+                child: MqSkeleton(height: 110, radius: MqRadius.lg),
+              )
           else
-            MqCard(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              child: Column(
-                children: [
-                  for (final (i, c) in cases.indexed) ...[
-                    if (i > 0) const Divider(height: 1),
-                    _CaseRow(teledermaCase: c, onTap: () => _openCase(c)),
-                  ],
-                ],
+            for (final c in cases)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _CaseCard(teledermaCase: c, onTap: () => _openCase(c)),
               ),
-            ),
         ],
       ),
     );
   }
 }
 
-class _CaseRow extends StatelessWidget {
+class _CaseCard extends StatelessWidget {
   final TeledermaCase teledermaCase;
   final VoidCallback onTap;
 
-  const _CaseRow({required this.teledermaCase, required this.onTap});
+  const _CaseCard({required this.teledermaCase, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final c = teledermaCase;
     final t = MqTheme.of(context);
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        child: Row(
-          children: [
-            CaseImageView(url: c.thumbnailUrl, size: 48),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(c.title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
-                  const SizedBox(height: 2),
-                  if (c.createdAt case final createdAt?)
-                    Text(formatDate(createdAt), style: secondaryText(context, fontSize: 13)),
-                  const SizedBox(height: 8),
-                  MqBadge(label: c.status.label),
-                ],
-              ),
+    final date = c.submittedAt ?? c.createdAt;
+    return Material(
+      color: t.surfaceRaised,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(MqRadius.lg),
+        side: BorderSide(color: t.borderDefault),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(child: CaseImageView(url: c.thumbnailUrl, size: 56, radius: 10)),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(c.title, style: const TextStyle(fontSize: MqFontSize.base, fontWeight: FontWeight.w500)),
+                      if (date != null) ...[
+                        const SizedBox(height: 4),
+                        Text(capitalize(formatDateTime(date)), style: secondaryText(context, fontSize: MqFontSize.xs)),
+                      ],
+                      const SizedBox(height: 8),
+                      MqBadge(label: c.status.label),
+                    ],
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: MqIcon(MqIcons.arrowRight, color: t.textPrimary),
+                ),
+              ],
             ),
-            Icon(Icons.chevron_right, color: t.textDisabled),
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _NewCaseSheet extends StatefulWidget {
-  const _NewCaseSheet();
+class _Centered extends StatelessWidget {
+  final Widget child;
 
-  @override
-  State<_NewCaseSheet> createState() => _NewCaseSheetState();
-}
-
-class _NewCaseSheetState extends State<_NewCaseSheet> {
-  final _reason = TextEditingController();
-
-  @override
-  void dispose() {
-    _reason.dispose();
-    super.dispose();
-  }
+  const _Centered({required this.child});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-          16, 0, 16, 16 + MediaQuery.viewInsetsOf(context).bottom + MediaQuery.viewPaddingOf(context).bottom),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Text('Nuevo caso', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 4),
-          Text('Después harás las fotos de la zona que quieras enseñar.', style: secondaryText(context)),
-          const SizedBox(height: 16),
-          MqTextarea(
-            controller: _reason,
-            label: 'Motivo de consulta (opcional)',
-            placeholder: 'Cuéntanos qué te preocupa',
-            maxLength: 2000,
-          ),
-          const SizedBox(height: 16),
-          MqButton(label: 'Empezar', expand: true, onPressed: () => Navigator.of(context).pop(_reason.text)),
-        ],
-      ),
-    );
-  }
-}
-
-class _Skeleton extends StatelessWidget {
-  const _Skeleton();
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        for (var i = 0; i < 3; i++)
-          const Padding(
-            padding: EdgeInsets.only(bottom: 8),
-            child: MqSkeleton(height: 76, radius: MqRadius.xl),
-          ),
-      ],
-    );
-  }
-}
-
-class _EmptyState extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String description;
-  final Widget? action;
-
-  const _EmptyState({required this.icon, required this.title, required this.description, this.action});
-
-  @override
-  Widget build(BuildContext context) {
-    final t = MqTheme.of(context);
     return CustomScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
         SliverFillRemaining(
           hasScrollBody: false,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(32, 32, 32, 64),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 64,
-                  height: 64,
-                  decoration: BoxDecoration(color: t.brandSubtle, shape: BoxShape.circle),
-                  child: Icon(icon, size: 28, color: t.textBrand),
-                ),
-                const SizedBox(height: 20),
-                Text(title,
-                    textAlign: TextAlign.center, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-                const SizedBox(height: 8),
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 320),
-                  child: Text(description, textAlign: TextAlign.center, style: secondaryText(context)),
-                ),
-                if (action != null) ...[const SizedBox(height: 24), action!],
-              ],
-            ),
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 64),
+            child: Center(child: child),
           ),
         ),
       ],

@@ -207,32 +207,41 @@ You can find more information in the [InAppWebView WebRTC documentation](https:/
 Our side is native; each body zone is captured with the [Legit.Health iframe](https://legit.health/integration/iframe/quickstart).
 Backend contract: api-chat `/imq/telederma/v1` ([mediquo/api-chat#4309](https://github.com/mediquo/api-chat/pull/4309)), IMQ patients only.
 
-1. `MediquoTeledermaCases` lists the patient's sent cases. **Nuevo caso** asks for an optional consultation reason
-   and creates a draft.
-2. `LegitIframeScreen` asks the backend for an iframe session (a URL with a single-use key) and loads it as is.
-3. On `analysis_completed` the report `id` is attached as the case's zone and the case is submitted. Closing the
-   iframe before that discards the draft.
-4. The detail shows the zone's photos and, when the patient may see it, the AI analysis.
+1. `MediquoTeledermaCases` lists the patient's consultations (Pendiente / Finalizada). The info button opens the
+   service information.
+2. **Nueva consulta** asks for the terms the first time (or after they change), like sdk-web: the status comes from
+   the login `legal_consent`, the URLs from the organization setup, and accepting calls `POST /profile/v1/legal-consent`.
+3. `LegitIframeScreen` asks the backend for an iframe session and loads it. Closing it asks for confirmation and
+   discards the draft.
+4. On `analysis_completed` the report is attached, the case is submitted and the "consulta enviada" screen is shown.
+5. The detail shows the summary (zone, answers, photos) and, once finished, the dermatologist and the documents.
 
-One zone per case for now; the backend already supports several (`reports`).
+While photos are still being stored (`media_status: pending`) the list and the detail reload every 3 seconds.
 
-Patients without access (403 on the list) see a "not available" state and no **Nuevo caso** button.
+Patients without access (403 on the list) see a "not available" state and no **Nueva consulta** button.
 
 ```dart
 MediquoTeledermaCases(
   repository: ApiChatTeledermaClient(ApiChatClient(apiKey: apiKey, token: patientToken)),
+  onLoadUrl: (url) => launchUrl(Uri.parse(url)),
   onCameraPermission: () => Permission.camera.request(),
 )
 ```
 
+`onLoadUrl` opens the terms, the privacy policy and the documents (report PDF, prescription), like `MediquoWidget`.
+
 `ApiChatClient` exchanges the host token for a session (`POST /login/v1/token`), like sdk-web core, and renews it on 401.
-`MockTeledermaRepository` (with `withAnalysis` to fake `enableResult`) stands in for the backend and loads the bundled
-simulator as the iframe.
+`MockTeledermaRepository` stands in for the backend and loads the bundled simulator as the iframe; `MockScenario`
+reproduces each state (empty, outdated terms, load error, no access, send error).
+
+Pending on the backend, mocked for now: the `finished` status, `reports[].answers` and `outcome` (dermatologist,
+`report_url`, `prescription_url`).
 
 ### White label
 
 `lib/src/design_system/` ports `@mediquo/ui`: primitive tokens (`MqColors`, `MqRadius`, `MqControlSize`, `MqFontSize`),
-semantic tokens (`MqTheme`, light mode) and components (`MqButton`, `MqTextarea`, `MqBadge`, `MqCard`, `showMqConfirm`).
+semantic tokens (`MqTheme`, light mode) and components (`MqButton`, `MqTextarea`, `MqBadge`, `MqBanner`, `MqIconContainer`, `MqCard`, `showMqConfirm`) and the
+MediCore stroke icons (`MqIcon`, `MqIcons`).
 Components sit on Cupertino widgets for native behaviour (press feedback, text editing, iOS alerts) and are painted
 with the tokens, so nothing looks Material. The brand tokens come from the organization's `primary_color`
 (`GET /organizations/v1/setup`, see `MqTheme.fromBrand`); falls back to the Mediquo purple. `theme` overrides them:

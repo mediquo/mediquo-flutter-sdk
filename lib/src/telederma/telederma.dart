@@ -1,6 +1,6 @@
 export '../api_client/api_chat_client.dart' show ApiChatClient, ApiChatException;
 export 'data/api_chat_telederma_client.dart' show ApiChatTeledermaClient;
-export 'data/mock_telederma_repository.dart' show MockTeledermaRepository;
+export 'data/mock_telederma_repository.dart' show MockScenario, MockTeledermaRepository;
 export 'data/telederma_repository.dart' show TeledermaRepository;
 export 'legit/legit_iframe.dart' show LegitIframe, LegitMessage;
 export 'models.dart';

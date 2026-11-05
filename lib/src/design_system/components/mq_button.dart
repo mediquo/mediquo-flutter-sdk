@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 
 import '../mq_theme.dart';
 import '../tokens.dart';
+import 'mq_icon.dart';
 
 enum MqButtonVariant { primary, secondary, outline, ghost, negative }
 
@@ -9,7 +10,7 @@ class MqButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
   final MqButtonVariant variant;
-  final IconData? icon;
+  final MqIconData? icon;
   final bool expand;
 
   const MqButton({
@@ -24,9 +25,15 @@ class MqButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = MqTheme.of(context);
+    final enabled = onPressed != null;
     final (background, foreground, border) = switch (variant) {
+      _ when !enabled => (
+          t.surfaceRaised,
+          t.textDisabled,
+          variant == MqButtonVariant.outline || variant == MqButtonVariant.secondary ? t.borderDefault : null
+        ),
       MqButtonVariant.primary => (t.brand, t.textOnBrand, null),
-      MqButtonVariant.secondary => (t.surfaceRaised, t.textPrimary, null),
+      MqButtonVariant.secondary => (t.brandSubtle, t.textBrand, t.brand),
       MqButtonVariant.outline => (t.background, t.textPrimary, t.borderDefault),
       MqButtonVariant.ghost => (null, t.textPrimary, null),
       MqButtonVariant.negative => (t.errorStrong, t.textInverse, null),
@@ -43,7 +50,7 @@ class MqButton extends StatelessWidget {
         mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          if (icon != null) ...[Icon(icon, size: 16, color: foreground), const SizedBox(width: 6)],
+          if (icon != null) ...[MqIcon(icon!, size: 16, color: foreground), const SizedBox(width: 8)],
           Flexible(
             child: Text(
               label,
@@ -61,15 +68,12 @@ class MqButton extends StatelessWidget {
         ],
       ),
     );
-    return Opacity(
-      opacity: onPressed == null ? 0.5 : 1,
-      child: border == null
-          ? button
-          : DecoratedBox(
-              position: DecorationPosition.foreground,
-              decoration: BoxDecoration(borderRadius: radius, border: Border.all(color: border)),
-              child: button,
-            ),
-    );
+    return border == null
+        ? button
+        : DecoratedBox(
+            position: DecorationPosition.foreground,
+            decoration: BoxDecoration(borderRadius: radius, border: Border.all(color: border)),
+            child: button,
+          );
   }
 }

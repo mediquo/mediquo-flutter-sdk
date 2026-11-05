@@ -5,31 +5,49 @@ import '../legit/legit_iframe.dart';
 import '../models.dart';
 import 'telederma_repository.dart';
 
+enum MockScenario { consultations, empty, termsOutdated, loadError, forbidden, sendError }
+
 class MockTeledermaRepository implements TeledermaRepository {
-  MockTeledermaRepository({this.latency = const Duration(milliseconds: 600), this.withAnalysis = false})
-      : _cases = _seed(withAnalysis);
+  MockTeledermaRepository(
+      {this.latency = const Duration(milliseconds: 600), this.scenario = MockScenario.consultations})
+      : _cases = scenario == MockScenario.empty ? [] : _seed(),
+        _acceptedAt = switch (scenario) {
+          MockScenario.empty => null,
+          MockScenario.termsOutdated => DateTime(2025),
+          _ => DateTime(2026, 2),
+        };
 
   final Duration latency;
-
-  final bool withAnalysis;
+  final MockScenario scenario;
   final List<TeledermaCase> _cases;
+  DateTime? _acceptedAt;
 
   @override
   Future<Color?> primaryColor() async => null;
 
   @override
+  Future<LegalConsent> legalConsent() async {
+    await Future.delayed(latency);
+    return LegalConsent(
+      acceptedAt: _acceptedAt,
+      lastVersionAt: DateTime(2026),
+      termsUrl: 'https://example.com/terminos',
+      privacyUrl: 'https://example.com/privacidad',
+    );
+  }
+
+  @override
+  Future<void> acceptLegalConsent(LegalConsent consent) async {
+    await Future.delayed(latency);
+    _acceptedAt = DateTime.now();
+  }
+
+  @override
   Future<List<TeledermaCase>> listCases() async {
     await Future.delayed(latency);
-    return [
-      for (final c in _cases)
-        TeledermaCase(
-          id: c.id,
-          status: c.status,
-          consultationReason: c.consultationReason,
-          createdAt: c.createdAt,
-          reports: [for (final r in c.reports) CaseReport(id: r.id, bodySite: r.bodySite)],
-        ),
-    ];
+    if (scenario == MockScenario.loadError) throw const ApiChatException(500, 'Server error.');
+    if (scenario == MockScenario.forbidden) throw const ApiChatException(403, 'Not an IMQ patient.');
+    return List.of(_cases);
   }
 
   @override
@@ -39,13 +57,11 @@ class MockTeledermaRepository implements TeledermaRepository {
   }
 
   @override
-  Future<TeledermaCase> createCase({String? consultationReason}) async {
+  Future<TeledermaCase> createCase() async {
     await Future.delayed(latency);
-    final reason = consultationReason?.trim();
     final created = TeledermaCase(
       id: 'case-${DateTime.now().microsecondsSinceEpoch}',
       status: CaseStatus.draft,
-      consultationReason: reason == null || reason.isEmpty ? null : reason,
       createdAt: DateTime.now(),
     );
     _cases.insert(0, created);
@@ -61,6 +77,7 @@ class MockTeledermaRepository implements TeledermaRepository {
   @override
   Future<Uri> createIframeSession(String caseId) async {
     await Future.delayed(latency);
+    if (scenario == MockScenario.sendError) throw const ApiChatException(502, 'Legit Health down.');
     _draft(caseId);
     return Uri.parse(LegitIframe.simulatorAsset);
   }
@@ -73,11 +90,7 @@ class MockTeledermaRepository implements TeledermaRepository {
       if (r.id == reportId) return r;
     }
     final parts = reportId.split('_');
-    final report = CaseReport(
-      id: reportId,
-      bodySite: _bodySites[parts.length > 3 ? parts[3] : null] ?? 'Other',
-      analysis: withAnalysis ? _analyses[parts.length > 2 ? parts[2] : null] ?? _analyses['rash'] : null,
-    );
+    final report = _report(reportId, _bodySites[parts.length > 3 ? parts[3] : null] ?? 'Otra zona');
     _replace(_copy(c, reports: [...c.reports, report]));
     return report;
   }
@@ -87,7 +100,7 @@ class MockTeledermaRepository implements TeledermaRepository {
     await Future.delayed(latency);
     final c = _draft(caseId);
     if (c.reports.isEmpty) throw const ApiChatException(422, 'The case has no reports.');
-    final submitted = _copy(c, status: CaseStatus.submitted);
+    final submitted = _copy(c, status: CaseStatus.submitted, submittedAt: DateTime.now());
     _replace(submitted);
     return submitted;
   }
@@ -103,41 +116,57 @@ class MockTeledermaRepository implements TeledermaRepository {
 
   void _replace(TeledermaCase c) => _cases[_cases.indexWhere((x) => x.id == c.id)] = c;
 
-  static TeledermaCase _copy(TeledermaCase c, {CaseStatus? status, List<CaseReport>? reports}) => TeledermaCase(
+  static TeledermaCase _copy(TeledermaCase c, {CaseStatus? status, DateTime? submittedAt, List<CaseReport>? reports}) =>
+      TeledermaCase(
         id: c.id,
         status: status ?? c.status,
-        consultationReason: c.consultationReason,
         createdAt: c.createdAt,
+        submittedAt: submittedAt ?? c.submittedAt,
         reports: reports ?? c.reports,
+        outcome: c.outcome,
       );
 
-  static List<TeledermaCase> _seed(bool withAnalysis) {
+  static CaseReport _report(String id, String bodySite) => CaseReport(
+        id: id,
+        bodySite: bodySite,
+        answers: const [
+          CaseAnswer('Desde cuándo', 'Hace 3 semanas'),
+          CaseAnswer('Síntomas', 'Picor leve'),
+          CaseAnswer('Medicación', 'Ninguna'),
+          CaseAnswer('Alergias', 'Ninguna'),
+        ],
+        photos: const [CasePhoto(type: 'observation'), CasePhoto(type: 'macroscopic')],
+      );
+
+  static TeledermaCase _submitted(String id, DateTime at, String bodySite, {CaseOutcome? outcome}) => TeledermaCase(
+        id: id,
+        status: outcome == null ? CaseStatus.submitted : CaseStatus.finished,
+        createdAt: at,
+        submittedAt: at,
+        reports: [_report('$id-report', bodySite)],
+        outcome: outcome,
+      );
+
+  static const _outcome = CaseOutcome(
+    dermatologist: 'Dra. Marta Ruiz',
+    licenseNumber: '08/12345',
+    reportUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+    prescriptionUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+  );
+
+  static List<TeledermaCase> _seed() {
     final now = DateTime.now();
     return [
-      TeledermaCase(
-        id: 'case-nevus',
-        status: CaseStatus.submitted,
-        consultationReason: 'Lunar que ha cambiado de color',
-        createdAt: now.subtract(const Duration(days: 3)),
-        reports: [
-          CaseReport(
-            id: 'mock_lesion_pigmented_back_changed_0',
-            bodySite: 'Espalda',
-            analysis: withAnalysis ? _analyses['pigmented'] : null,
-          ),
-        ],
-      ),
-      TeledermaCase(
-        id: 'case-old',
-        status: CaseStatus.submitted,
-        createdAt: now.subtract(const Duration(days: 40)),
-        reports: [
-          CaseReport(
-            id: 'mock_lesion_pimples_face_stable_0',
-            bodySite: 'Cabeza y cuello',
-            analysis: withAnalysis ? _analyses['pimples'] : null,
-          ),
-        ],
+      _submitted('case-arm', now.subtract(const Duration(days: 1)), 'Brazo derecho (inc. axilas)'),
+      _submitted('case-trunk', now.subtract(const Duration(days: 17)), 'Tronco (pecho y abdomen)', outcome: _outcome),
+      _submitted(
+        'case-face',
+        now.subtract(const Duration(days: 22)),
+        'Cabeza y cuello',
+        outcome: const CaseOutcome(
+            dermatologist: 'Dr. Jordi Puig',
+            licenseNumber: '08/67890',
+            reportUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'),
       ),
     ];
   }
@@ -151,33 +180,5 @@ class MockTeledermaRepository implements TeledermaRepository {
     'hand': 'Mano derecha',
     'leg': 'Pierna derecha',
     'foot': 'Pie derecho',
-  };
-
-  static const _analyses = {
-    'pigmented': Analysis(
-      hypotheses: [
-        Hypothesis(name: 'Melanocytic nevus', icd11: '2F20', probability: 58),
-        Hypothesis(name: 'Melanoma', icd11: '2C30', probability: 31),
-        Hypothesis(name: 'Seborrheic keratosis', icd11: '2F21.0', probability: 11),
-      ],
-      risk: Risk(hasCondition: 92, malignancy: 34, pigmentedLesion: 95, urgentReferral: 12, highPriorityReferral: 41),
-    ),
-    'rash': Analysis(
-      hypotheses: [
-        Hypothesis(name: 'Atopic dermatitis', icd11: 'EA80', probability: 64),
-        Hypothesis(name: 'Contact dermatitis', icd11: 'EK00', probability: 24),
-        Hypothesis(name: 'Psoriasis', icd11: 'EA90', probability: 12),
-      ],
-      risk: Risk(hasCondition: 88, malignancy: 2, pigmentedLesion: 4, urgentReferral: 3, highPriorityReferral: 9),
-      severity: [Severity(name: 'ASCORAD', score: 34, severity: 'Moderate')],
-    ),
-    'pimples': Analysis(
-      hypotheses: [
-        Hypothesis(name: 'Acne', icd11: 'ED80', probability: 72.5),
-        Hypothesis(name: 'Rosacea', icd11: 'ED90', probability: 27.5),
-      ],
-      risk: Risk(hasCondition: 88, malignancy: 1, pigmentedLesion: 3, urgentReferral: 2, highPriorityReferral: 5),
-      severity: [Severity(name: 'ALEGI', score: 12, severity: 'Mild')],
-    ),
   };
 }

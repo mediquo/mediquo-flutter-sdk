@@ -4,8 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 import '../data/telederma_repository.dart';
+import '../widgets/common.dart';
+import 'consultation_sent_screen.dart';
 import '../legit/legit_iframe.dart';
-import '../models.dart';
 import '../../design_system/design_system.dart';
 
 class LegitIframeScreen extends StatefulWidget {
@@ -24,7 +25,6 @@ enum _Phase { loadingSession, iframe, saving, error }
 class _LegitIframeScreenState extends State<LegitIframeScreen> {
   _Phase _phase = _Phase.loadingSession;
   late Uri _url;
-  String _error = '';
   bool _pageLoading = true;
   int _attempt = 0;
 
@@ -52,26 +52,65 @@ class _LegitIframeScreenState extends State<LegitIframeScreen> {
         _phase = _Phase.iframe;
       });
     } catch (_) {
-      _fail('No se ha podido iniciar el servicio de dermatología.');
+      _fail();
     }
   }
 
-  void _fail(String message) {
-    if (!mounted) return;
-    setState(() {
-      _phase = _Phase.error;
-      _error = message;
-    });
+  void _fail() {
+    if (mounted) setState(() => _phase = _Phase.error);
+  }
+
+  Future<void> _close() async {
+    if (_phase == _Phase.saving) return;
+    if (_phase == _Phase.iframe && !await _confirmExit()) return;
+    if (mounted) Navigator.of(context).pop(false);
+  }
+
+  Future<bool> _confirmExit() async {
+    final exit = await showModalBottomSheet<bool>(
+      context: context,
+      builder: (context) => Padding(
+        padding: EdgeInsets.fromLTRB(24, 0, 24, 24 + MediaQuery.viewPaddingOf(context).bottom),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text('¿Salir sin enviar tu consulta?',
+                style: TextStyle(fontSize: MqFontSize.xl, fontWeight: FontWeight.w500)),
+            const SizedBox(height: 12),
+            Text(
+              'Si sales ahora, perderás lo que has rellenado y tendrás que empezar de nuevo.',
+              style: secondaryText(context, fontSize: MqFontSize.base),
+            ),
+            const SizedBox(height: 24),
+            MqButton(label: 'Seguir con la consulta', expand: true, onPressed: () => Navigator.of(context).pop(false)),
+            const SizedBox(height: 8),
+            MqButton(
+              label: 'Salir',
+              variant: MqButtonVariant.outline,
+              expand: true,
+              onPressed: () => Navigator.of(context).pop(true),
+            ),
+          ],
+        ),
+      ),
+    );
+    return exit ?? false;
   }
 
   Future<void> _attachReport(String reportId) async {
     setState(() => _phase = _Phase.saving);
     try {
-      final report = await widget.repository.attachReport(widget.caseId, reportId);
+      await widget.repository.attachReport(widget.caseId, reportId);
       await widget.repository.submitCase(widget.caseId);
-      if (mounted) Navigator.of(context).pop(report);
+      if (!mounted) return;
+      final theme = MqTheme.of(context);
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => theme.wrap(const ConsultationSentScreen())),
+        result: true,
+      );
     } catch (_) {
-      _fail('Las fotos se han analizado pero no hemos podido enviar el caso.');
+      _fail();
     }
   }
 
@@ -88,28 +127,63 @@ class _LegitIframeScreenState extends State<LegitIframeScreen> {
           SnackBar(content: Text('Foto rechazada${reasons.isEmpty ? '' : ': $reasons'}. Repítela, por favor.')),
         );
       case LegitMessage.invalidCompanyKey:
-        _fail('La sesión ha caducado.');
+        _fail();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.of(context).pop()),
-        title: const Text('Nuevo caso'),
-      ),
-      body: switch (_phase) {
-        _Phase.loadingSession => const Center(child: CircularProgressIndicator.adaptive()),
-        _Phase.iframe => Stack(
-            children: [
-              _buildWebView(),
-              if (_pageLoading) const Center(child: CircularProgressIndicator.adaptive()),
-            ],
-          ),
-        _Phase.saving => const _SavingCase(),
-        _Phase.error => _ErrorView(message: _error, onRetry: _prepare),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _close();
       },
+      child: Scaffold(
+        appBar: _phase == _Phase.error
+            ? null
+            : AppBar(
+                automaticallyImplyLeading: false,
+                leading: IconButton(icon: const MqIcon(MqIcons.xClose), tooltip: 'Cerrar', onPressed: _close),
+                title: const Text('Nueva consulta'),
+              ),
+        body: switch (_phase) {
+          _Phase.loadingSession => const Center(child: CircularProgressIndicator.adaptive()),
+          _Phase.iframe => Stack(
+              children: [
+                _buildWebView(),
+                if (_pageLoading) const Center(child: CircularProgressIndicator.adaptive()),
+              ],
+            ),
+          _Phase.saving => const _SavingCase(),
+          _Phase.error => const SafeArea(
+              child: Center(
+                child: Padding(
+                  padding: EdgeInsets.all(24),
+                  child: ScreenHero(
+                    icon: MqIcons.alertCircle,
+                    tone: MqTone.error,
+                    centered: true,
+                    title: 'No hemos podido enviar tu consulta',
+                    description: 'Revisa tu conexión e inténtalo de nuevo. Si vuelve a fallar, prueba en unos minutos.',
+                  ),
+                ),
+              ),
+            ),
+        },
+        bottomNavigationBar: _phase == _Phase.error
+            ? BottomActions(
+                children: [
+                  MqButton(label: 'Reintentar', expand: true, onPressed: _prepare),
+                  MqButton(
+                    label: 'Volver',
+                    variant: MqButtonVariant.outline,
+                    expand: true,
+                    onPressed: () => Navigator.of(context).pop(false),
+                  ),
+                ],
+              )
+            : null,
+      ),
     );
   }
 
@@ -142,7 +216,7 @@ class _LegitIframeScreenState extends State<LegitIframeScreen> {
         if (mounted) setState(() => _pageLoading = false);
       },
       onReceivedError: (_, request, __) {
-        if (request.isForMainFrame ?? true) _fail('No se ha podido cargar el servicio. Revisa tu conexión.');
+        if (request.isForMainFrame ?? true) _fail();
       },
       onPermissionRequest: (_, request) async {
         final wantsCamera =
@@ -169,54 +243,9 @@ class _SavingCase extends StatelessWidget {
         children: [
           CircularProgressIndicator.adaptive(),
           SizedBox(height: 16),
-          Text('Enviando tu caso…'),
+          Text('Enviando tu consulta…'),
         ],
       ),
     );
   }
-}
-
-class _ErrorView extends StatelessWidget {
-  final String message;
-  final VoidCallback onRetry;
-
-  const _ErrorView({required this.message, required this.onRetry});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.cloud_off, size: 48, color: MqTheme.of(context).textDisabled),
-            const SizedBox(height: 12),
-            Text(message, textAlign: TextAlign.center),
-            const SizedBox(height: 12),
-            MqButton(label: 'Reintentar', onPressed: onRetry),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-Future<CaseReport?> openLegitIframe(
-  BuildContext context, {
-  required TeledermaRepository repository,
-  required String caseId,
-  required MqTheme theme,
-  Future<void> Function()? onCameraPermission,
-}) {
-  return Navigator.of(context).push<CaseReport>(
-    MaterialPageRoute(
-      fullscreenDialog: true,
-      builder: (_) => theme.wrap(LegitIframeScreen(
-        repository: repository,
-        caseId: caseId,
-        onCameraPermission: onCameraPermission,
-      )),
-    ),
-  );
 }

@@ -11,13 +11,44 @@ class ApiChatTeledermaClient implements TeledermaRepository {
 
   static String _case(String caseId) => '/imq/telederma/v1/cases/${Uri.encodeComponent(caseId)}';
 
+  Future<Map<String, dynamic>>? _setup;
+
+  Future<Map<String, dynamic>> _organization() => _setup ??= _fetchOrganization();
+
+  Future<Map<String, dynamic>> _fetchOrganization() async {
+    try {
+      final json = await _api.send('GET', '/organizations/v1/setup');
+      return json['data'] as Map<String, dynamic>;
+    } catch (_) {
+      _setup = null;
+      rethrow;
+    }
+  }
+
   @override
   Future<Color?> primaryColor() async {
-    final json = await _api.send('GET', '/organizations/v1/setup');
-    final hex = (json['data']['primary_color'] as String?)?.replaceFirst('#', '');
+    final hex = ((await _organization())['primary_color'] as String?)?.replaceFirst('#', '');
     final rgb = hex?.length == 6 ? int.tryParse(hex!, radix: 16) : null;
     return rgb == null ? null : Color(0xFF000000 | rgb);
   }
+
+  @override
+  Future<LegalConsent> legalConsent() async {
+    Map<String, dynamic>? organization;
+    try {
+      organization = (await _organization())['legal_consent'] as Map<String, dynamic>?;
+    } on ApiChatException {
+      organization = null;
+    }
+    return LegalConsent.fromJson((await _api.patient())['legal_consent'], organization: organization);
+  }
+
+  @override
+  Future<void> acceptLegalConsent(LegalConsent consent) => _api.send('POST', '/profile/v1/legal-consent', body: {
+        'terms_accepted': true,
+        'privacy_accepted': true,
+        'commercial_accepted': consent.hasCommercialCommunications,
+      });
 
   @override
   Future<List<TeledermaCase>> listCases() async {
@@ -32,11 +63,8 @@ class ApiChatTeledermaClient implements TeledermaRepository {
   }
 
   @override
-  Future<TeledermaCase> createCase({String? consultationReason}) async {
-    final json = await _api.send('POST', '/imq/telederma/v1/cases', body: {
-      if (consultationReason != null && consultationReason.trim().isNotEmpty)
-        'consultation_reason': consultationReason.trim(),
-    });
+  Future<TeledermaCase> createCase() async {
+    final json = await _api.send('POST', '/imq/telederma/v1/cases', body: {});
     return TeledermaCase.fromJson(json['data']);
   }
 

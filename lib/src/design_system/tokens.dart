@@ -14,12 +14,16 @@ abstract final class MqColors {
 
   static const textIconsSecondary = Color(0xFF6D658B);
 
+  static const green50 = Color(0xFFE8F6EC);
+  static const green700 = Color(0xFF1B7A3D);
+
   static const red50 = Color(0xFFFED5E1);
   static const red500 = Color(0xFFFF014D);
   static const red700 = Color(0xFFB30135);
 }
 
 abstract final class MqRadius {
+  static const sm = 4.0;
   static const md = 6.0;
   static const lg = 8.0;
   static const xl = 12.0;
