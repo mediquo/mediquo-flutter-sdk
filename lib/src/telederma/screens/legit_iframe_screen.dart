@@ -1,5 +1,6 @@
 import 'dart:collection';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
@@ -45,6 +46,8 @@ class _LegitIframeScreenState extends State<LegitIframeScreen> {
       _attempt++;
     });
     try {
+      // Android's file chooser only offers the camera once the permission is granted.
+      if (defaultTargetPlatform == TargetPlatform.android) await widget.onCameraPermission?.call();
       final url = await widget.repository.createIframeSession(widget.caseId);
       if (!mounted) return;
       setState(() {

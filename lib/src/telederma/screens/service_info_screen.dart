@@ -28,30 +28,6 @@ class _ServiceInfoScreenState extends State<ServiceInfoScreen> {
     super.dispose();
   }
 
-  static const _faqs = [
-    (
-      '¿Cuándo puedo usar este servicio?',
-      'Cuando tengas una duda sobre tu piel que no sea urgente: manchas, lunares, granos, picores o erupciones. '
-          'Puedes enviar tu consulta a cualquier hora.',
-    ),
-    (
-      '¿Tiene algún coste?',
-      'No. El servicio está incluido en tu seguro y no pagas nada por cada consulta.',
-    ),
-    (
-      '¿Qué respuesta voy a recibir?',
-      'Un informe del dermatólogo con su valoración y los pasos a seguir. Si hace falta, también una receta electrónica.',
-    ),
-    (
-      '¿Quién ve mis fotos?',
-      'Solo el dermatólogo que valora tu caso. No se comparten con nadie más.',
-    ),
-    (
-      '¿Puedo resolver dudas después?',
-      'Puedes hacer una nueva consulta cuando quieras. Si el dermatólogo necesita verte en persona, te lo dirá en el informe.',
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) {
     final t = MqTheme.of(context);
@@ -107,10 +83,6 @@ class _ServiceInfoScreenState extends State<ServiceInfoScreen> {
             title: 'Antes de empezar',
             description: 'Ten a mano de 1 a 3 fotos nítidas de la zona, con buena luz natural.',
           ),
-          const SizedBox(height: 32),
-          const Text('Preguntas frecuentes', style: headingStyle),
-          const SizedBox(height: 4),
-          for (final (question, answer) in _faqs) _Faq(question: question, answer: answer),
           const SizedBox(height: 32),
           FutureBuilder(
             future: _consent,
@@ -170,63 +142,6 @@ class _Benefit extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _Faq extends StatefulWidget {
-  final String question;
-  final String answer;
-
-  const _Faq({required this.question, required this.answer});
-
-  @override
-  State<_Faq> createState() => _FaqState();
-}
-
-class _FaqState extends State<_Faq> {
-  bool _open = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Semantics(
-          button: true,
-          expanded: _open,
-          child: InkWell(
-            onTap: () => setState(() => _open = !_open),
-            borderRadius: BorderRadius.circular(MqRadius.lg),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 64),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(widget.question, style: const TextStyle(fontSize: MqFontSize.base, height: 1.5)),
-                  ),
-                  const SizedBox(width: 12),
-                  AnimatedRotation(
-                    turns: _open ? 0.25 : 0,
-                    duration: const Duration(milliseconds: 200),
-                    child: const MqIcon(MqIcons.chevronRight),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        AnimatedSize(
-          duration: const Duration(milliseconds: 200),
-          alignment: Alignment.topCenter,
-          child: _open
-              ? Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: Text(widget.answer, style: secondaryText(context)),
-                )
-              : const SizedBox(width: double.infinity),
-        ),
-      ],
     );
   }
 }

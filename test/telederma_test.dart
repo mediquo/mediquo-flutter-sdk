@@ -339,9 +339,28 @@ void main() {
     });
   });
 
-  Widget app(TeledermaRepository repository, {void Function(String)? onLoadUrl}) => MaterialApp(
-        home: MediquoTeledermaCases(repository: repository, onLoadUrl: onLoadUrl ?? (_) {}),
+  Widget app(TeledermaRepository repository, {void Function(String)? onLoadUrl, Future<void> Function()? onCamera}) =>
+      MaterialApp(
+        home: MediquoTeledermaCases(
+          repository: repository,
+          onLoadUrl: onLoadUrl ?? (_) {},
+          onCameraPermission: onCamera,
+        ),
       );
+
+  testWidgets('asks for the camera before opening the iframe on Android', (tester) async {
+    var asked = 0;
+    await tester.pumpWidget(app(
+      MockTeledermaRepository(latency: Duration.zero, scenario: MockScenario.sendError),
+      onCamera: () async => asked++,
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Nueva consulta'));
+    await tester.pumpAndSettle();
+    expect(find.byType(LegitIframeScreen), findsOneWidget);
+    expect(asked, 1);
+  });
 
   testWidgets('lists the consultations and opens the documents of a finished one', (tester) async {
     tester.view.physicalSize = const Size(1200, 2600);
