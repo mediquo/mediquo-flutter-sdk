@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../api_client/api_chat_client.dart';
 import '../../design_system/design_system.dart';
+import '../data/api_chat_telederma_client.dart';
 import '../data/telederma_repository.dart';
 import '../models.dart';
 import '../widgets/common.dart';
@@ -31,29 +32,47 @@ class _NewConsultationRoute extends TeledermaRoute {
   const _NewConsultationRoute();
 }
 
-class MediquoTeledermaCases extends StatefulWidget {
-  final TeledermaRepository repository;
+class MediquoTelederma extends StatefulWidget {
+  final String apiKey;
+  final String token;
   final void Function(String url) onLoadUrl;
   final Future<void> Function(String filePath) onOpenDocument;
   final TeledermaRoute initialRoute;
   final MqTheme? theme;
   final Future<void> Function()? onCameraPermission;
+  final TeledermaRepository? _repository;
 
-  const MediquoTeledermaCases({
+  const MediquoTelederma({
     super.key,
-    required this.repository,
+    required this.apiKey,
+    required this.token,
     required this.onLoadUrl,
     required this.onOpenDocument,
     this.initialRoute = const TeledermaRoute.cases(),
     this.theme,
     this.onCameraPermission,
-  });
+  }) : _repository = null;
+
+  @visibleForTesting
+  const MediquoTelederma.withRepository(
+    TeledermaRepository repository, {
+    super.key,
+    required this.onLoadUrl,
+    required this.onOpenDocument,
+    this.initialRoute = const TeledermaRoute.cases(),
+    this.theme,
+    this.onCameraPermission,
+  })  : _repository = repository,
+        apiKey = '',
+        token = '';
 
   @override
-  State<MediquoTeledermaCases> createState() => _MediquoTeledermaCasesState();
+  State<MediquoTelederma> createState() => _MediquoTeledermaState();
 }
 
-class _MediquoTeledermaCasesState extends State<MediquoTeledermaCases> {
+class _MediquoTeledermaState extends State<MediquoTelederma> {
+  late final TeledermaRepository _repository =
+      widget._repository ?? ApiChatTeledermaClient(ApiChatClient(apiKey: widget.apiKey, token: widget.token));
   late Future<List<TeledermaCase>> _cases;
   late final AppLifecycleListener _lifecycle;
   bool _starting = false;
@@ -90,10 +109,10 @@ class _MediquoTeledermaCasesState extends State<MediquoTeledermaCases> {
     super.dispose();
   }
 
-  Future<List<TeledermaCase>> _load() => widget.repository.listCases();
+  Future<List<TeledermaCase>> _load() => _repository.listCases();
 
   Future<void> _loadBrand() async {
-    final color = await widget.repository.primaryColor().catchError((_) => null);
+    final color = await _repository.primaryColor().catchError((_) => null);
     if (mounted) setState(() => _brand = color == null ? const MqTheme() : MqTheme.fromBrand(color));
   }
 
@@ -111,26 +130,26 @@ class _MediquoTeledermaCasesState extends State<MediquoTeledermaCases> {
     setState(() => _starting = true);
     try {
       if (!_consentAccepted) {
-        final consent = await widget.repository.legalConsent();
+        final consent = await _repository.legalConsent();
         _consentAccepted = consent.status == LegalConsentStatus.accepted ||
             await _push<bool>(TermsScreen(
-                  repository: widget.repository,
+                  repository: _repository,
                   consent: consent,
                   onLoadUrl: widget.onLoadUrl,
                 )) ==
                 true;
         if (!_consentAccepted) return;
       }
-      final created = await widget.repository.createCase();
+      final created = await _repository.createCase();
       final sent = await _push<bool>(
         LegitIframeScreen(
-          repository: widget.repository,
+          repository: _repository,
           caseId: created.id,
           onCameraPermission: widget.onCameraPermission,
         ),
         fullscreenDialog: true,
       );
-      if (sent != true) widget.repository.discardCase(created.id).ignore();
+      if (sent != true) _repository.discardCase(created.id).ignore();
       if (mounted) _reload();
     } catch (e) {
       if (!mounted) return;
@@ -147,7 +166,7 @@ class _MediquoTeledermaCasesState extends State<MediquoTeledermaCases> {
 
   Future<void> _openCase(String caseId) async {
     await _push(CaseDetailScreen(
-      repository: widget.repository,
+      repository: _repository,
       caseId: caseId,
       onOpenDocument: widget.onOpenDocument,
     ));
@@ -176,7 +195,7 @@ class _MediquoTeledermaCasesState extends State<MediquoTeledermaCases> {
                 IconButton(
                   icon: const MqIcon(MqIcons.infoCircle),
                   tooltip: 'Más información',
-                  onPressed: () => _push(ServiceInfoScreen(repository: widget.repository, onLoadUrl: widget.onLoadUrl)),
+                  onPressed: () => _push(ServiceInfoScreen(repository: _repository, onLoadUrl: widget.onLoadUrl)),
                 ),
             ],
           ),

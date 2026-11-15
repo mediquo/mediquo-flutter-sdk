@@ -1,7 +1,7 @@
 library mediquo_flutter_sdk;
 
 export 'src/telederma/telederma.dart'
-    show MediquoTeledermaCases, TeledermaRoute, ApiChatClient, ApiChatTeledermaClient, MqTheme;
+    show MediquoTelederma, TeledermaRoute, MqTheme;
 
 import 'dart:async';
 import 'dart:io';

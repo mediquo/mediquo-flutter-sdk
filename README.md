@@ -27,7 +27,7 @@ healthcare professionals, and remote dermatology consultations.
 - Chat with MediQuo's healthcare professionals, including file and link sharing.
 - Video calls inside your app.
 
-**Dermatology** (`MediquoTeledermaCases`)
+**Dermatology** (`MediquoTelederma`)
 
 - Patients send photos of a skin condition and a dermatologist replies within 48 business hours.
 - Native screens for the consultation list, the consultation detail and the service information.
@@ -161,12 +161,13 @@ Navigator.of(context).push(MaterialPageRoute(
 > Dermatology is enabled per organization. Patients without access see a "service not available" screen. Contact
 > MediQuo to enable it.
 
-Push `MediquoTeledermaCases` as a page:
+Push `MediquoTelederma` as a page. It takes the same credentials as `MediquoWidget`:
 
 ```dart
 Navigator.of(context).push(MaterialPageRoute(
-  builder: (_) => MediquoTeledermaCases(
-    repository: ApiChatTeledermaClient(ApiChatClient(apiKey: apiKey, token: patientToken)),
+  builder: (_) => MediquoTelederma(
+    apiKey: apiKey,
+    token: patientToken,
     onLoadUrl: (url) => launchUrl(Uri.parse(url)),
     onOpenDocument: (path) => OpenFilex.open(path, type: 'application/pdf'),
     onCameraPermission: () => Permission.camera.request(),
@@ -203,7 +204,7 @@ Use `initialRoute` to open a consultation or start a new one directly, for examp
 email link. The consultation list stays underneath, so going back lands on it.
 
 ```dart
-MediquoTeledermaCases(
+MediquoTelederma(
   // ...
   initialRoute: TeledermaRoute.caseDetail(consultationId),
 )
@@ -228,7 +229,7 @@ By default the screens use your organization's brand colour, as configured in Me
 `MqTheme`. `MqTheme.fromBrand` derives the full palette from one colour:
 
 ```dart
-MediquoTeledermaCases(
+MediquoTelederma(
   // ...
   theme: MqTheme.fromBrand(const Color(0xFF0079C8)),
 )
@@ -252,11 +253,12 @@ Use the `MqTheme` constructor to set individual colours (`brand`, `textPrimary`,
 | `theme` | `MediquoWidgetTheme` | No | Visual customization. |
 | `environment` | `MediquoWidgetEnvironment` | No | `production` (default) or `sandbox`. |
 
-### `MediquoTeledermaCases`
+### `MediquoTelederma`
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
-| `repository` | `TeledermaRepository` | Yes | Data source. Use `ApiChatTeledermaClient(ApiChatClient(apiKey:, token:))`. |
+| `apiKey` | `String` | Yes | Your client API key. |
+| `token` | `String` | Yes | The patient token. |
 | `onLoadUrl` | `void Function(String url)` | Yes | Opens the terms and conditions and the privacy policy. |
 | `onOpenDocument` | `Future<void> Function(String filePath)` | Yes | Receives the path of a downloaded PDF. See [Opening documents](#opening-documents). |
 | `onCameraPermission` | `Future<void> Function()` | No | Request the camera permission. On Android it is called before the photo capture opens. |
@@ -319,8 +321,9 @@ class HomePage extends StatelessWidget {
             FilledButton(
               onPressed: () => _open(
                 context,
-                MediquoTeledermaCases(
-                  repository: ApiChatTeledermaClient(ApiChatClient(apiKey: apiKey, token: patientToken)),
+                MediquoTelederma(
+                  apiKey: apiKey,
+                  token: patientToken,
                   onLoadUrl: (url) => launchUrl(Uri.parse(url)),
                   onOpenDocument: (path) => OpenFilex.open(path, type: 'application/pdf'),
                   onCameraPermission: () => Permission.camera.request(),

@@ -3,6 +3,6 @@ export 'data/api_chat_telederma_client.dart' show ApiChatTeledermaClient;
 export 'data/telederma_repository.dart' show TeledermaRepository;
 export 'legit/legit_iframe.dart' show LegitIframe, LegitMessage;
 export 'models.dart';
-export 'screens/cases_screen.dart' show MediquoTeledermaCases, TeledermaRoute;
+export 'screens/cases_screen.dart' show MediquoTelederma, TeledermaRoute;
 export 'screens/legit_iframe_screen.dart' show LegitIframeScreen;
 export '../design_system/design_system.dart';
