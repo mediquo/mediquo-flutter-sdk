@@ -1,5 +1,8 @@
 library mediquo_flutter_sdk;
 
+export 'src/telederma/telederma.dart'
+    show MediquoTeledermaCases, TeledermaRoute, ApiChatClient, ApiChatTeledermaClient, MqTheme;
+
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -109,7 +112,7 @@ class _MediquoWidgetState extends State<MediquoWidget> with WidgetsBindingObserv
     late List<ConnectivityResult> result;
     try {
       result = await _connectivity.checkConnectivity();
-    } on PlatformException catch (e) {
+    } on PlatformException {
       return;
     }
 

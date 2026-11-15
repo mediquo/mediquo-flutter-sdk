@@ -1,6 +1,6 @@
 name: mediquo_flutter_sdk
 description: "MediQuo Flutter SDK"
-version: 0.5.1
+version: 0.6.0
 homepage: "https://mediquo.com"
 
 environment:
@@ -12,6 +12,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_inappwebview: ^6.2.0-beta.3
+  http: ^1.2.2
 
 dev_dependencies:
   flutter_test:
@@ -23,7 +24,6 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
-
   # To add assets to your package, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg
