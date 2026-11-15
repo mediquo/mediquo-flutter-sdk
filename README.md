@@ -1,184 +1,88 @@
 # MediQuo Flutter SDK
 
-The MediQuo Flutter SDK allows to integrate the MediQuo web widget in your Flutter application. The main features are:
-- Chat
-- Video call
+[![Latest release](https://img.shields.io/github/v/tag/mediquo/mediquo-flutter-sdk?label=release&sort=semver)](https://github.com/mediquo/mediquo-flutter-sdk/tags)
 
-The package uses the next plugins: 
-- [InAppWebView v6](https://inappwebview.dev/) plugin in order to load and interact with a MediQuo web widget.
-- [Connectivity plus v6](https://pub.dev/packages/connectivity_plus) plugin in order check internet connectivity.
+The MediQuo Flutter SDK adds MediQuo's telemedicine services to your Flutter app: chat and video calls with
+healthcare professionals, and remote dermatology consultations.
+
+## Table of contents
+
+- [Features](#features)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Getting started](#getting-started)
+  - [Chat and video calls](#chat-and-video-calls)
+  - [Dermatology](#dermatology)
+- [Customization](#customization)
+- [API reference](#api-reference)
+- [Example](#example)
+- [Troubleshooting](#troubleshooting)
+- [Releases](#releases)
+- [Support](#support)
+
+## Features
+
+**Chat and video calls** (`MediquoWidget`)
+
+- Chat with MediQuo's healthcare professionals, including file and link sharing.
+- Video calls inside your app.
+
+**Dermatology** (`MediquoTeledermaCases`)
+
+- Patients send photos of a skin condition and a dermatologist replies within 48 business hours.
+- Native screens for the consultation list, the consultation detail and the service information.
+- Guided photo capture for each body zone, provided by [Legit.Health](https://legit.health).
+- The dermatologist's report and prescriptions are available as PDFs once the consultation is finished.
+- Terms and conditions are requested and stored by the SDK.
+- Follows your organization's brand colour automatically, with full theme overrides.
+
+## Requirements
+
+| | Minimum version |
+|---|---|
+| Dart | 3.5 |
+| Flutter | 3.27 |
+| iOS | 13.0 |
+| Android | API 21 (the Flutter default) |
+
+You also need MediQuo credentials. See [Credentials](#credentials).
 
 ## Installation
 
-The MediQuo Flutter SDK can be added in your project following the next steps:
+### 1. Add the dependency
 
-- Add the Github package `https://github.com/mediquo/mediquo-flutter-sdk.git` the `pubspec.yaml` file in your Flutter project. Consult the [reference](https://github.com/mediquo/mediquo-flutter-sdk/tags) to specify the version by tag .
+The SDK is distributed through this Git repository. Add it to your `pubspec.yaml` and pin a release tag:
 
 ```yaml
+dependencies:
   mediquo_flutter_sdk:
     git:
       url: https://github.com/mediquo/mediquo-flutter-sdk.git
-      ref: x.y.z
+      ref: 0.6.0 # see https://github.com/mediquo/mediquo-flutter-sdk/tags
 ```
 
-Then, download the package by running the `flutter pub get` command.
+Then run:
 
-## Integration
-
-Before you initialize the SDK, make sure you have at hand these two values:
-- `API_KEY`: Your personal api key provided by MediQuo.
-- `TOKEN`: Patient token obtained from the [patients authenticate method](https://developer.mediquo.com/docs/api/patients/#authenticate)
-
-In order to integrate the SDK, import the package in your dart class.
-
-```dart
-import 'package:mediquo_flutter_sdk/mediquo_flutter_sdk.dart';
+```bash
+flutter pub get
 ```
 
-Whenever you want to present the MediQuo functionality, add the lines below:
+### 2. Configure Android
 
-```dart
-MediquoWidget(
-    apiKey: API_KEY,
-    token: TOKEN,
-    onDownload: onDownloadCallback,
-    onLoadUrl: onLoadUrlCallback,
-    onMicrophonePermission: onMicrophonePermissionCallback,
-    onCameraPermission: onCameraPermissionCallback
-    theme: const MediquoWidgetTheme() // optional
-);
-``` 
-
-### Callbacks
-
-In order to have a full functionality of the widget, the init method requires the definition of some callback functions. These functions should define the behaviour of your application in the next cases:
-- onDownload(string downloadUrl): It will be invoked when the user tries to download a file in the SDK. 
-- onLoadUrl(string url): It will be invoked when the user tries to open a url sent to the chat in the SDK. 
-- onMicrophonePermission(): It will be invoked when the user is accessing to a video call and requires the device microphone permission.
-- onCameraPermission(): It will be invoked when the user is accessing to a video call and requires the device camera permission.
-
-### Customization
-
-You can optionally pass the `MediquoWidgetTheme` customization object as `theme` to the MediQuoWidget instance. The next properties can be defined:
-
-| Nombre         | Tipo  | Valor por defecto |
-|----------------|-------|-------------------|
-| containerColor | Color | Colors.white      |
-
-## Example
-
-The next class opens a new page when the floating button is pressed.
-
-```dart
-import 'dart:io';
-
-import 'package:flutter/material.dart';
-import 'package:flutter_downloader/flutter_downloader.dart';
-import 'package:mediquo_flutter_sdk/mediquo_flutter_sdk.dart';
-
-import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:url_launcher/url_launcher.dart';
-
-Future main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-
-  await FlutterDownloader.initialize(
-      debug: true,
-      ignoreSsl: true
-  );
-
-  runApp(const MaterialApp(home: MyApp()));
-}
-
-class MyApp extends StatefulWidget {
-  const MyApp({Key? key}) : super(key: key);
-
-  @override
-  State<MyApp> createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> {
-
-  static onDownloadCallback(String downloadUrl) async {
-    final tempDir = Platform.isAndroid
-        ? await getExternalStorageDirectory()
-        : await getApplicationDocumentsDirectory();
-
-    await FlutterDownloader.enqueue(
-        url: downloadUrl,
-        savedDir: tempDir!.path,
-        showNotification: true,
-        openFileFromNotification: true,
-        saveInPublicStorage: true
-    );
-
-    return;
-  }
-
-  static onLoadUrlCallback(String url) async {
-    launchUrl(Uri.parse(url));
-    return;
-  }
-
-  static onMicrophonePermissionCallback() async {
-    await Permission.microphone.request();
-  }
-
-  static onCameraPermissionCallback() async {
-    await Permission.camera.request();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-        appBar: AppBar(
-          title: const Text("My app"),
-        ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            Navigator.push(context, MaterialPageRoute(
-              builder: (context) {
-                return const MediquoWidget(
-                    apiKey: '',
-                    token: '',
-                    onDownload: onDownloadCallback,
-                    onLoadUrl: onLoadUrlCallback,
-                    onMicrophonePermission: onMicrophonePermissionCallback,
-                    onCameraPermission: onCameraPermissionCallback,
-                    theme: const MediquoWidgetTheme(
-                      containerColor: Colors.white
-                    ),
-                );
-              },
-              )
-            );
-          },
-          child: const Icon(Icons.local_hospital)
-        ),
-    );
-  }
-}
-```
-
-Notice the next points in the code:
-- Api key and token are empty values. 
-- Camera and microphone permission callbacks are implemented using the [Flutter permission_handler plugin](https://pub.dev/packages/permission_handler).
-- Download callback is implemented using the [Flutter downloader plugin](https://pub.dev/packages/flutter_downloader)
-- Load URL callback is implemented using the [Flutter URL launcher plugin](https://pub.dev/packages/url_launcher)
-
-In order to grant permissions, the `AndroidManifest.xml` was modified by adding these lines:
+Add these permissions to `android/app/src/main/AndroidManifest.xml`, outside the `<application>` tag:
 
 ```xml
-<uses-permission android:name="android.permission.INTERNET"/>
+<uses-permission android:name="android.permission.INTERNET" />
 <uses-permission android:name="android.permission.CAMERA" />
+<!-- Only needed for video calls -->
 <uses-permission android:name="android.permission.RECORD_AUDIO" />
 <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
 <uses-permission android:name="android.permission.VIDEO_CAPTURE" />
 <uses-permission android:name="android.permission.AUDIO_CAPTURE" />
 ```
 
-In the `<application>` tag insert this provider configuration:
+For file uploads in the chat, add this provider inside the `<application>` tag:
+
 ```xml
 <provider
     android:name="com.pichillilorenzo.flutter_inappwebview_android.InAppWebViewFileProvider"
@@ -191,76 +95,283 @@ In the `<application>` tag insert this provider configuration:
 </provider>
 ```
 
-Also the `Info.plist` file:
-```
-<key>NSMicrophoneUsageDescription</key>
-<string>Flutter requires access to microphone.</string>
+### 3. Configure iOS
 
+Add the usage descriptions to `ios/Runner/Info.plist`. iOS shows these texts when it asks the patient for access:
+
+```xml
 <key>NSCameraUsageDescription</key>
-<string>Flutter requires access to camera.</string>
+<string>The camera is used for video calls and to take photos for your consultations.</string>
+<!-- Only needed for video calls -->
+<key>NSMicrophoneUsageDescription</key>
+<string>The microphone is used for video calls.</string>
 ```
 
-You can find more information in the [InAppWebView WebRTC documentation](https://inappwebview.dev/docs/web-rtc) 
+> [!NOTE]
+> The SDK does not request permissions itself. It calls your permission callbacks, so you decide how to ask. The
+> examples below use [permission_handler](https://pub.dev/packages/permission_handler).
 
-## Telederma
+## Getting started
 
-Our side is native; each body zone is captured with the [Legit.Health iframe](https://legit.health/integration/iframe/quickstart).
-Backend contract: api-chat `/imq/telederma/v1` ([mediquo/api-chat#4309](https://github.com/mediquo/api-chat/pull/4309)), IMQ patients only.
+### Credentials
 
-1. `MediquoTeledermaCases` lists the patient's consultations (Pendiente / Finalizada). The info button opens the
-   service information.
-2. **Nueva consulta** asks for the terms the first time (or after they change), like sdk-web: the status comes from
-   the login `legal_consent`, the URLs from the organization setup, and accepting calls `POST /profile/v1/legal-consent`.
-3. **Nueva consulta** asks the backend for a Legit.Health iframe session and loads it. Closing it asks for confirmation and
-   discards the draft.
-4. On `analysis_completed` the report is attached, the case is submitted and the "consulta enviada" screen is shown.
-5. The detail shows the summary (zone, answers, photos) and, once `finished`, when it was closed and the documents
-   the dermatologist generated (`documents`: report, prescription, diagnostic test prescription). A finished case may
-   have no documents, and a document may have no `download_url` yet; both states are shown.
+You need two values:
 
-Patients without access (403 on the list) see a "not available" state and no **Nueva consulta** button.
+| Value | Description |
+|---|---|
+| API key | Your organization's client API key, provided by MediQuo. |
+| Patient token | Identifies the signed-in patient. Your backend gets it from the [patients authenticate endpoint](https://developer.mediquo.com/docs/api/patients/#authenticate) and passes it to the app. |
+
+> [!IMPORTANT]
+> Request the patient token from your backend. Never ship server-to-server credentials inside the app.
+
+Import the package wherever you use it:
+
+```dart
+import 'package:mediquo_flutter_sdk/mediquo_flutter_sdk.dart';
+```
+
+### Chat and video calls
+
+Push `MediquoWidget` as a page:
+
+```dart
+Navigator.of(context).push(MaterialPageRoute(
+  builder: (_) => MediquoWidget(
+    apiKey: apiKey,
+    token: patientToken,
+    onDownload: (url) => launchUrl(Uri.parse(url)),
+    onLoadUrl: (url) => launchUrl(Uri.parse(url)),
+    onMicrophonePermission: () => Permission.microphone.request(),
+    onCameraPermission: () => Permission.camera.request(),
+  ),
+));
+```
+
+| Callback | When it is called |
+|---|---|
+| `onDownload(url)` | The patient downloads a file from the chat. |
+| `onLoadUrl(url)` | The patient opens a link sent to the chat. |
+| `onMicrophonePermission()` | A video call needs the microphone. |
+| `onCameraPermission()` | A video call needs the camera. |
+
+### Dermatology
+
+> [!NOTE]
+> Dermatology is enabled per organization. Patients without access see a "service not available" screen. Contact
+> MediQuo to enable it.
+
+Push `MediquoTeledermaCases` as a page:
+
+```dart
+Navigator.of(context).push(MaterialPageRoute(
+  builder: (_) => MediquoTeledermaCases(
+    repository: ApiChatTeledermaClient(ApiChatClient(apiKey: apiKey, token: patientToken)),
+    onLoadUrl: (url) => launchUrl(Uri.parse(url)),
+    onOpenDocument: (path) => OpenFilex.open(path, type: 'application/pdf'),
+    onCameraPermission: () => Permission.camera.request(),
+  ),
+));
+```
+
+The patient's journey:
+
+1. **Consultations.** The list shows pending consultations first, then finished ones. It refreshes when the app
+   returns to the foreground.
+2. **New consultation.** The first time, and whenever the terms change, the patient accepts the terms and
+   conditions. Then the guided photo capture opens. Closing it before sending asks for confirmation and discards
+   the draft.
+3. **Sent.** A confirmation screen explains the next steps. The patient is notified by email when the
+   dermatologist replies.
+4. **Detail.** Shows the body zone, the patient's answers and the photos. Once finished, it also lists the
+   dermatologist's documents (report, prescription, diagnostic tests).
+
+#### Opening documents
+
+Documents are protected by the patient session, so the SDK downloads them and passes `onOpenDocument` the path of a
+local PDF. Open it with a viewer, share it or save it.
+
+The SDK deletes the file when the patient leaves the consultation detail or opens another document. Copy it first if
+you need to keep it.
+
+The example uses [open_filex](https://pub.dev/packages/open_filex), which opens the system PDF viewer on Android and
+iOS.
+
+#### Opening a specific screen
+
+Use `initialRoute` to open a consultation or start a new one directly, for example from a push notification or an
+email link. The consultation list stays underneath, so going back lands on it.
 
 ```dart
 MediquoTeledermaCases(
-  repository: ApiChatTeledermaClient(ApiChatClient(apiKey: apiKey, token: patientToken)),
-  onLoadUrl: (url) => launchUrl(Uri.parse(url)),
-  onOpenDocument: (path) => OpenFilex.open(path, type: 'application/pdf'), // open_filex
-  onCameraPermission: () => Permission.camera.request(),
-  initialRoute: const TeledermaRoute.caseDetail(caseId), // optional
+  // ...
+  initialRoute: TeledermaRoute.caseDetail(consultationId),
 )
 ```
 
-- `onLoadUrl` opens the terms and the privacy policy, like `MediquoWidget`.
-- `onOpenDocument` receives the local path of a downloaded PDF. Document URLs need the patient session, so the SDK
-  downloads them itself (`GET download_url` with the session JWT, only to the api-chat host) into the temp directory
-  and hands the file over to be shown, shared or saved. The file is deleted when the patient leaves the case detail
-  or opens another document, so copy it if you need to keep it. A 404 means the PDF is not ready yet.
-- `onCameraPermission` is asked before the iframe on Android, whose file chooser only offers the camera once granted.
-- `initialRoute` opens the flow on a given screen, like a deep link: `TeledermaRoute.cases()` (default),
-  `TeledermaRoute.caseDetail(caseId)` or `TeledermaRoute.newConsultation()`. The list stays underneath, so going back
-  lands on it.
+## Customization
 
-`ApiChatClient` exchanges the host token for a session (`POST /login/v1/token`), like sdk-web core, and renews it on 401.
+### Chat and video calls
 
+Pass a `MediquoWidgetTheme`:
 
-### White label
+```dart
+MediquoWidget(
+  // ...
+  theme: const MediquoWidgetTheme(containerColor: Colors.white),
+)
+```
 
-The screens follow the MediCore design system (`@mediquo/ui`) on Cupertino widgets, so nothing looks Material.
-The brand colours come from the organization's `primary_color`
-(`GET /organizations/v1/setup`, see `MqTheme.fromBrand`); falls back to the Mediquo purple. `theme` overrides them:
+### Dermatology
+
+By default the screens use your organization's brand colour, as configured in MediQuo. To override it, pass an
+`MqTheme`. `MqTheme.fromBrand` derives the full palette from one colour:
 
 ```dart
 MediquoTeledermaCases(
-  theme: const MqTheme(brand: Color(0xFF0079C8), brandSubtle: Color(0xFFE5F2FA), textBrand: Color(0xFF0079C8)),
+  // ...
+  theme: MqTheme.fromBrand(const Color(0xFF0079C8)),
 )
 ```
 
-### Iframe bridge
+Use the `MqTheme` constructor to set individual colours (`brand`, `textPrimary`, `background`, `error`…) and
+`fontFamily`.
 
-On mobile the iframe does not use `window.postMessage`: it posts a JSON string (`{message, id, payload}`) to
-`webkit.messageHandlers.bridge` on iOS and to `legitHealthJsObject` on Android. The SDK injects a user
-script that shims both (plus `postMessage`) and forwards everything to a Flutter handler. Handled callbacks:
-`analysis_completed`, `image_rejected` (snackbar) and `invalid_company_key` (error + retry with a new session).
-Messages are only accepted while the WebView is on an https `legit.health` page, and only the
-camera permission is granted. If attaching the zone fails, retry re-sends the same report instead of restarting the
-iframe.
+## API reference
+
+### `MediquoWidget`
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `apiKey` | `String` | Yes | Your client API key. |
+| `token` | `String` | Yes | The patient token. |
+| `onDownload` | `Function(String url)` | Yes | Called when the patient downloads a file. |
+| `onLoadUrl` | `Function(String url)` | Yes | Called when the patient opens a link. |
+| `onMicrophonePermission` | `Future Function()` | Yes | Request the microphone permission. |
+| `onCameraPermission` | `Future Function()` | Yes | Request the camera permission. |
+| `theme` | `MediquoWidgetTheme` | No | Visual customization. |
+| `environment` | `MediquoWidgetEnvironment` | No | `production` (default) or `sandbox`. |
+
+### `MediquoTeledermaCases`
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `repository` | `TeledermaRepository` | Yes | Data source. Use `ApiChatTeledermaClient(ApiChatClient(apiKey:, token:))`. |
+| `onLoadUrl` | `void Function(String url)` | Yes | Opens the terms and conditions and the privacy policy. |
+| `onOpenDocument` | `Future<void> Function(String filePath)` | Yes | Receives the path of a downloaded PDF. See [Opening documents](#opening-documents). |
+| `onCameraPermission` | `Future<void> Function()` | No | Request the camera permission. On Android it is called before the photo capture opens. |
+| `initialRoute` | `TeledermaRoute` | No | Screen to open first. Defaults to `TeledermaRoute.cases()`. |
+| `theme` | `MqTheme` | No | Overrides the organization's brand colours. |
+
+### `TeledermaRoute`
+
+| Value | Opens |
+|---|---|
+| `TeledermaRoute.cases()` | The consultation list (default). |
+| `TeledermaRoute.caseDetail(id)` | The detail of a consultation. |
+| `TeledermaRoute.newConsultation()` | A new consultation. |
+
+## Example
+
+A complete app that opens both features from its home screen:
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:mediquo_flutter_sdk/mediquo_flutter_sdk.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+const apiKey = 'YOUR_API_KEY';
+const patientToken = 'PATIENT_TOKEN_FROM_YOUR_BACKEND';
+
+void main() => runApp(const MaterialApp(home: HomePage()));
+
+class HomePage extends StatelessWidget {
+  const HomePage({super.key});
+
+  void _open(BuildContext context, Widget page) =>
+      Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('My app')),
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            FilledButton(
+              onPressed: () => _open(
+                context,
+                MediquoWidget(
+                  apiKey: apiKey,
+                  token: patientToken,
+                  onDownload: (url) => launchUrl(Uri.parse(url)),
+                  onLoadUrl: (url) => launchUrl(Uri.parse(url)),
+                  onMicrophonePermission: () => Permission.microphone.request(),
+                  onCameraPermission: () => Permission.camera.request(),
+                ),
+              ),
+              child: const Text('Chat with a doctor'),
+            ),
+            const SizedBox(height: 12),
+            FilledButton(
+              onPressed: () => _open(
+                context,
+                MediquoTeledermaCases(
+                  repository: ApiChatTeledermaClient(ApiChatClient(apiKey: apiKey, token: patientToken)),
+                  onLoadUrl: (url) => launchUrl(Uri.parse(url)),
+                  onOpenDocument: (path) => OpenFilex.open(path, type: 'application/pdf'),
+                  onCameraPermission: () => Permission.camera.request(),
+                ),
+              ),
+              child: const Text('Dermatology'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+```
+
+This example depends on [permission_handler](https://pub.dev/packages/permission_handler),
+[url_launcher](https://pub.dev/packages/url_launcher) and [open_filex](https://pub.dev/packages/open_filex). Replace
+them with your own implementations if you prefer.
+
+## Troubleshooting
+
+### The camera is not offered in the dermatology photo capture on Android
+
+Android's file chooser only offers the camera once the permission is granted. Implement `onCameraPermission` and
+declare `android.permission.CAMERA` in the manifest.
+
+### PDFs do not open on Android
+
+`open_filex` hands the PDF to an installed viewer app. If the device has none, nothing opens: check the
+`OpenResult` it returns and show a message. If you implemented `onOpenDocument` yourself, read the file before the
+patient leaves the consultation detail, because the SDK deletes it then.
+
+### The patient sees "service not available" in Dermatology
+
+Dermatology is not enabled for the patient's organization. Contact MediQuo.
+
+### Video calls have no audio or video
+
+Check that the microphone and camera callbacks request the permission and that the manifest and `Info.plist`
+entries from [Installation](#installation) are present. See also the
+[InAppWebView WebRTC guide](https://inappwebview.dev/docs/web-rtc).
+
+## Releases
+
+Releases follow [semantic versioning](https://semver.org) and are published as tags in this repository, without a
+`v` prefix (`0.6.0`). Each release has its notes in [CHANGELOG.md](CHANGELOG.md) and on the
+[GitHub releases page](https://github.com/mediquo/mediquo-flutter-sdk/releases).
+
+Pin an exact tag in `pubspec.yaml` and read the changelog before upgrading.
+
+## Support
+
+For integration help or to report an issue, contact your MediQuo account manager. Include the SDK version, the
+platform and OS version, and the steps to reproduce.
