@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.1
+
+### Patch Changes
+
+- Telederma no longer shows its own "Foto rechazada" notice with the raw analysis data when Legit Health rejects a photo: the "Revisa tu foto" dialog from Legit Health is the only message the patient sees.
+
 ## 0.8.0
 
 ### Minor Changes
