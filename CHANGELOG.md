@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.8.0
+
+### Minor Changes
+
+- Telederma shows the dermatologist assigned to each consultation: name on the list cards, and name, speciality, collegiate number and photo on the detail. Assigned consultations stay with the pending ones.
+
+### Patch Changes
+
+- Telederma screens no longer draw their last lines under the Android navigation bar: the service information footer, the case detail and the consultations list now end above it.
+
 ## 0.7.0
 
 ### Minor Changes

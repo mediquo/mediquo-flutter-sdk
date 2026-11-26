@@ -7,6 +7,7 @@ import '../data/telederma_repository.dart';
 import '../models.dart';
 import '../../design_system/design_system.dart';
 import '../widgets/common.dart';
+import '../widgets/professional.dart';
 
 class CaseDetailScreen extends StatefulWidget {
   final TeledermaRepository repository;
@@ -77,39 +78,36 @@ class _CaseBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = teledermaCase;
-    final finished = c.status == CaseStatus.finished;
-    final finishedAt = c.finishedAt;
     final sentAt = c.submittedAt ?? c.createdAt;
-    final notes = [
-      if (finishedAt != null) 'Finalizada el ${formatDateTime(finishedAt)}',
-      if (c.documents.isEmpty) 'El dermatólogo no ha adjuntado documentos.',
-    ];
     return ListView(
-      padding: const EdgeInsets.all(24),
+      padding: scrollPadding(context, const EdgeInsets.all(24)),
       children: [
-        if (!finished)
+        if (c.status case CaseStatus.draft || CaseStatus.submitted) ...[
           const MqBanner(
             icon: MqIcons.infoCircle,
             title: 'Un dermatólogo revisará tu consulta',
-            description: 'Te avisaremos por email cuando tengas el informe.',
-          )
-        else
-          MqBanner(
-            icon: MqIcons.checkCircle,
-            tone: MqTone.success,
-            title: c.documents.any((d) => d.type == CaseDocument.report)
-                ? 'Tu informe está listo'
-                : 'Tu consulta ha finalizado',
-            description: notes.isEmpty ? null : notes.join('\n'),
+            description: 'Te avisaremos por email cuando tengas el informe y se finalice la consulta.',
           ),
-        if (finished && c.documents.isNotEmpty) ...[
           const SizedBox(height: 24),
+        ] else ...[
+          Align(alignment: AlignmentDirectional.centerStart, child: CaseStatusBadge(status: c.status)),
+          const SizedBox(height: 24),
+          if (c.professional case final professional?) ...[
+            const Text('Tu dermatólogo', style: headingStyle),
+            const SizedBox(height: 12),
+            ProfessionalTile(professional: professional),
+            const SizedBox(height: 24),
+          ],
+        ],
+        if (c.status == CaseStatus.finished) ...[
           const Text('Documentos', style: headingStyle),
           const SizedBox(height: 8),
-          for (final d in c.documents) _DocumentRow(document: d, repository: repository, onOpen: onOpenDocument),
+          if (c.documents.isEmpty)
+            Text('El dermatólogo no ha adjuntado documentos.', style: secondaryText(context))
+          else
+            for (final d in c.documents) _DocumentRow(document: d, repository: repository, onOpen: onOpenDocument),
           const Divider(height: 48),
-        ] else
-          const SizedBox(height: 24),
+        ],
         const Text('Resumen de tu consulta', style: headingStyle),
         if (sentAt != null) ...[
           const SizedBox(height: 12),
@@ -261,7 +259,7 @@ class _CaseSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.all(24),
+      padding: scrollPadding(context, const EdgeInsets.all(24)),
       physics: const NeverScrollableScrollPhysics(),
       children: const [
         MqSkeleton(height: 76, radius: MqRadius.lg),

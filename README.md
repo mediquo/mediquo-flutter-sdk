@@ -184,8 +184,9 @@ The patient's journey:
    the draft.
 3. **Sent.** A confirmation screen explains the next steps. The patient is notified by email when the
    dermatologist replies.
-4. **Detail.** Shows the body zone, the patient's answers and the photos. Once finished, it also lists the
-   dermatologist's documents (report, prescription, diagnostic tests).
+4. **Detail.** Shows the body zone, the patient's answers and the photos. Once a dermatologist takes the
+   consultation, it shows who it is. Once finished, it also lists the dermatologist's documents (report,
+   prescription, diagnostic tests).
 
 #### Opening documents
 

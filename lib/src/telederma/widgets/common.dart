@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../design_system/design_system.dart';
+import '../models.dart';
 
 const _weekdays = ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom'];
 const _months = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
@@ -15,6 +16,9 @@ String capitalize(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(
 
 TextStyle secondaryText(BuildContext context, {double fontSize = MqFontSize.sm}) =>
     TextStyle(fontSize: fontSize, height: 1.35, color: MqTheme.of(context).textSecondary);
+
+EdgeInsets scrollPadding(BuildContext context, EdgeInsets padding) =>
+    padding.copyWith(bottom: padding.bottom + MediaQuery.paddingOf(context).bottom);
 
 const headingStyle = TextStyle(fontSize: MqFontSize.lg, fontWeight: FontWeight.w500, height: 1.35);
 
@@ -41,6 +45,16 @@ class CaseImageView extends StatelessWidget {
           : Image.network(url!, fit: BoxFit.cover, gaplessPlayback: true, errorBuilder: (_, __, ___) => placeholder),
     );
   }
+}
+
+class CaseStatusBadge extends StatelessWidget {
+  final CaseStatus status;
+
+  const CaseStatusBadge({super.key, required this.status});
+
+  @override
+  Widget build(BuildContext context) =>
+      MqBadge(label: status.label, tone: status == CaseStatus.finished ? MqTone.success : MqTone.neutral);
 }
 
 class NumberedStep extends StatelessWidget {

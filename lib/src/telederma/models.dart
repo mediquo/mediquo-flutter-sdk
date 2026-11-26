@@ -3,6 +3,7 @@ library;
 enum CaseStatus {
   draft('Borrador'),
   submitted('Pendiente'),
+  assigned('Pendiente'),
   finished('Finalizada');
 
   final String label;
@@ -69,6 +70,31 @@ class CaseDocument {
       );
 }
 
+class CaseProfessional {
+  final String name;
+  final String speciality;
+  final String? collegiateNumber;
+  final String? avatarUrl;
+
+  const CaseProfessional({required this.name, required this.speciality, this.collegiateNumber, this.avatarUrl});
+
+  String get detail => [speciality, if (collegiateNumber case final number?) number].join(' · ');
+
+  String get initials => name
+      .split(' ')
+      .where((word) => word.isNotEmpty && !word.endsWith('.'))
+      .take(2)
+      .map((word) => word[0].toUpperCase())
+      .join();
+
+  factory CaseProfessional.fromJson(Map<String, dynamic> json) => CaseProfessional(
+        name: json['name'] as String,
+        speciality: json['speciality'] as String,
+        collegiateNumber: json['collegiate_number'] as String?,
+        avatarUrl: json['avatar'] as String?,
+      );
+}
+
 class TeledermaCase {
   final String id;
   final CaseStatus status;
@@ -76,6 +102,7 @@ class TeledermaCase {
   final DateTime? submittedAt;
   final DateTime? finishedAt;
   final String? thumbnailUrl;
+  final CaseProfessional? professional;
   final List<CaseReport> reports;
   final List<CaseDocument> documents;
 
@@ -86,6 +113,7 @@ class TeledermaCase {
     this.submittedAt,
     this.finishedAt,
     this.thumbnailUrl,
+    this.professional,
     this.reports = const [],
     this.documents = const [],
   });
@@ -102,6 +130,10 @@ class TeledermaCase {
         submittedAt: _date(json['submitted_at']),
         finishedAt: _date(json['finished_at']),
         thumbnailUrl: json['thumbnail_url'] as String?,
+        professional: switch (json['professional']) {
+          final Map<String, dynamic> p => CaseProfessional.fromJson(p),
+          _ => null,
+        },
         reports: [for (final r in json['reports'] as List? ?? const []) CaseReport.fromJson(r)],
         documents: [for (final d in json['documents'] as List? ?? const []) CaseDocument.fromJson(d)],
       );

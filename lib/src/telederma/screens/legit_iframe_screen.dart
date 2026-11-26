@@ -124,11 +124,6 @@ class _LegitIframeScreenState extends State<LegitIframeScreen> {
         if (_completedReportId != null || id == null) return;
         _completedReportId = id;
         _attachReport(id);
-      case LegitMessage.imageRejected:
-        final reasons = message.payload is List ? (message.payload as List).join(', ') : '';
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Foto rechazada${reasons.isEmpty ? '' : ': $reasons'}. Repítela, por favor.')),
-        );
       case LegitMessage.invalidCompanyKey:
         _fail();
     }

@@ -183,9 +183,10 @@ class _MediquoTeledermaState extends State<MediquoTelederma> {
         final loading = (snapshot.connectionState != ConnectionState.done && !snapshot.hasData) || !_branded;
         final all = snapshot.data ?? const <TeledermaCase>[];
         final cases = [
-          for (final status in [CaseStatus.submitted, CaseStatus.finished])
-            for (final c in all)
-              if (c.status == status) c
+          for (final c in all)
+            if (c.status case CaseStatus.submitted || CaseStatus.assigned) c,
+          for (final c in all)
+            if (c.status == CaseStatus.finished) c,
         ];
         return Scaffold(
           appBar: AppBar(
@@ -237,7 +238,7 @@ class _MediquoTeledermaState extends State<MediquoTelederma> {
     }
     if (error) {
       return ListView(
-        padding: const EdgeInsets.all(24),
+        padding: scrollPadding(context, const EdgeInsets.all(24)),
         children: [
           const MqBanner(
             icon: MqIcons.alertCircle,
@@ -277,7 +278,7 @@ class _MediquoTeledermaState extends State<MediquoTelederma> {
     return RefreshIndicator.adaptive(
       onRefresh: () async => _reload(),
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(24, 24, 24, 96),
+        padding: scrollPadding(context, const EdgeInsets.fromLTRB(24, 24, 24, 96)),
         children: [
           const Text('Tus consultas', style: headingStyle),
           const SizedBox(height: 12),
@@ -321,36 +322,46 @@ class _CaseCard extends StatelessWidget {
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Center(child: CaseImageView(url: c.thumbnailUrl, size: 56, radius: 10)),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(c.title, style: const TextStyle(fontSize: MqFontSize.base, fontWeight: FontWeight.w500)),
-                      if (date != null) ...[
-                        const SizedBox(height: 4),
-                        Text(capitalize(formatDateTime(date)), style: secondaryText(context, fontSize: MqFontSize.xs)),
-                      ],
-                      const SizedBox(height: 8),
-                      MqBadge(
-                        label: c.status.label,
-                        tone: c.status == CaseStatus.finished ? MqTone.success : MqTone.neutral,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Center(child: CaseImageView(url: c.thumbnailUrl, size: 56, radius: 10)),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(c.title, style: const TextStyle(fontSize: MqFontSize.base, fontWeight: FontWeight.w500)),
+                          if (date != null) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              capitalize(formatDateTime(date)),
+                              style: secondaryText(context, fontSize: MqFontSize.xs),
+                            ),
+                          ],
+                          const SizedBox(height: 8),
+                          CaseStatusBadge(status: c.status),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                    Align(
+                      alignment: Alignment.bottomCenter,
+                      child: MqIcon(MqIcons.arrowRight, color: t.textPrimary),
+                    ),
+                  ],
                 ),
-                Align(
-                  alignment: Alignment.bottomCenter,
-                  child: MqIcon(MqIcons.arrowRight, color: t.textPrimary),
-                ),
+              ),
+              if ((c.status, c.professional)
+                  case (CaseStatus.assigned || CaseStatus.finished, final professional?)) ...[
+                const Divider(height: 24),
+                Text(professional.name, style: secondaryText(context)),
               ],
-            ),
+            ],
           ),
         ),
       ),
@@ -371,7 +382,7 @@ class _Centered extends StatelessWidget {
         SliverFillRemaining(
           hasScrollBody: false,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 64),
+            padding: scrollPadding(context, const EdgeInsets.fromLTRB(24, 24, 24, 64)),
             child: Center(child: child),
           ),
         ),

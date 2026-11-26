@@ -34,7 +34,7 @@ class _ServiceInfoScreenState extends State<ServiceInfoScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Más información')),
       body: ListView(
-        padding: const EdgeInsets.all(24),
+        padding: scrollPadding(context, const EdgeInsets.all(24)),
         children: [
           const Text('Qué incluye', style: headingStyle),
           const SizedBox(height: 16),
